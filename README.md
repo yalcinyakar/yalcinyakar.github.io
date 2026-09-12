@@ -1,1 +1,0 @@
-# yalcinyakar.github.io
