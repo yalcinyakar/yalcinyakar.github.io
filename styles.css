@@ -104,6 +104,7 @@ h1 em { color: var(--lime); font-family: Georgia, "Times New Roman", serif; font
 .education-grid h3 { margin: 55px 0 12px; font-size: clamp(1.5rem, 2.5vw, 2.15rem); line-height: 1.1; }
 .education-grid p { margin: 0; color: var(--muted); }
 .insight-card { display: grid; grid-template-columns: 1.55fr 1fr auto; gap: 42px; align-items: end; padding: 38px; color: inherit; background: var(--panel); border: 1px solid var(--line); text-decoration: none; transition: transform .25s ease, border-color .25s ease; }
+.insight-card + .insight-card { margin-top: 18px; }
 .insight-card:hover, .insight-card:focus-visible { transform: translateY(-5px); border-color: var(--lime); }
 .insight-card span, .article-meta { color: var(--lime); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .76rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
 .insight-card h3 { max-width: 720px; margin: 28px 0 0; font-size: clamp(2rem, 4vw, 3.5rem); line-height: 1.02; }
