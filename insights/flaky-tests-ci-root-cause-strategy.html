@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Flaky Tests in CI: How to Restore Trust Without Hiding Failures | Yalçın Yakar</title>
+  <meta name="description" content="Learn how to identify, classify, quarantine, and eliminate flaky tests without masking real failures or weakening your CI quality gate.">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="theme-color" content="#080a09">
+  <link rel="canonical" href="https://yalcinyakar.github.io/insights/flaky-tests-ci-root-cause-strategy.html">
+  <link rel="stylesheet" href="/styles.css">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Flaky Tests in CI: How to Restore Trust Without Hiding Failures">
+  <meta property="og:description" content="A practical strategy for classifying flaky tests, preserving evidence, using retries safely, and managing quarantine.">
+  <meta property="og:url" content="https://yalcinyakar.github.io/insights/flaky-tests-ci-root-cause-strategy.html">
+  <meta property="og:image" content="https://yalcinyakar.github.io/assets/yalcin-yakar-it-engineer.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://yalcinyakar.github.io/assets/yalcin-yakar-it-engineer.jpg">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": "Flaky Tests in CI: How to Restore Trust Without Hiding Failures",
+    "description": "Learn how to identify, classify, quarantine, and eliminate flaky tests without masking real failures or weakening your CI quality gate.",
+    "datePublished": "2026-09-22",
+    "dateModified": "2026-09-22",
+    "mainEntityOfPage": "https://yalcinyakar.github.io/insights/flaky-tests-ci-root-cause-strategy.html",
+    "image": "https://yalcinyakar.github.io/assets/yalcin-yakar-it-engineer.jpg",
+    "author": {
+      "@type": "Person",
+      "name": "Yalçın Yakar",
+      "url": "https://yalcinyakar.github.io/",
+      "sameAs": ["https://www.linkedin.com/in/yalcinyakar", "https://github.com/yalcinyakar"]
+    }
+  }
+  </script>
+</head>
+<body>
+  <div class="noise" aria-hidden="true"></div>
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="Yalçın Yakar home"><span>YY</span><b>Yalçın Yakar</b></a>
+    <nav aria-label="Article navigation"><a href="/#about">About</a><a href="/#stack">Stack</a><a href="/#insights">Insights</a></nav>
+    <a class="nav-cta" href="https://www.linkedin.com/in/yalcinyakar" target="_blank" rel="me noopener">Connect <span aria-hidden="true">↗</span></a>
+  </header>
+
+  <main class="article-shell">
+    <a class="article-back" href="/#insights">← Back to insights</a>
+    <article>
+      <header class="article-header">
+        <p class="article-meta">QA Engineering · September 22, 2026 · 9 min read</p>
+        <h1>Flaky Tests in CI: How to Restore Trust Without Hiding Failures</h1>
+        <p class="article-deck">A flaky test does more than waste pipeline time. It teaches teams to distrust failures. The solution is not a permanently green build, but a delivery system where red still means something.</p>
+      </header>
+
+      <div class="article-body">
+        <p>A test that fails consistently is useful. It tells the team that something is broken. A test that sometimes passes and sometimes fails under the same conditions is more dangerous. It creates uncertainty: is the product defective, is the environment unstable, or is the test itself unreliable?</p>
+        <p>These non-deterministic tests—commonly called flaky tests—do more than slow down a CI pipeline. They gradually train developers to distrust automation. Once “just rerun it” becomes the default response, a genuine regression can be dismissed as another false alarm.</p>
+        <p>The goal is therefore not simply to make the pipeline green. It is to restore the relationship between a failed test and a real engineering problem.</p>
+
+        <h2>What is a flaky test?</h2>
+        <p>A flaky test produces different results without a relevant change to the application or test code. The same commit may pass in one pipeline run and fail in the next.</p>
+        <p>The official <a href="https://docs.pytest.org/en/stable/explanation/flaky.html" target="_blank" rel="noopener">pytest documentation</a> describes flakiness as intermittent or apparently non-deterministic failure. Flakiness is usually caused by an uncontrolled dependency rather than true randomness. Somewhere in the execution path, the test depends on state, timing, ordering, infrastructure, or data it does not fully control.</p>
+        <div class="article-callout">A trusted pipeline is not one that always appears green. It is one where a failure remains a useful engineering signal.</div>
+
+        <h2>Classify the failure before fixing it</h2>
+        <p>Treating every flaky test as a synchronization problem leads to unnecessary waits and slower pipelines. Start by placing the failure into a practical category.</p>
+
+        <h3>1. Shared state</h3>
+        <p>Tests may reuse database records, files, browser sessions, caches, message queues, or global variables. One test changes the environment and another unknowingly inherits the result. This type of failure often appears when tests run in parallel or in a different order.</p>
+        <p>Each test should create the state it needs and uniquely isolate or remove that state afterward. Selenium’s guidance recommends avoiding shared test data and creating a separate WebDriver instance for each test. See <a href="https://www.selenium.dev/documentation/test_practices/encouraged/avoid_sharing_state/" target="_blank" rel="noopener">Avoid sharing state</a>.</p>
+
+        <h3>2. Timing and asynchronous behavior</h3>
+        <p>Fixed delays such as <code>sleep(5)</code> assume the system will reach the expected state within an arbitrary period. The delay may be unnecessarily long on a healthy run and still too short when the environment is busy.</p>
+        <p>Replace fixed sleeps with bounded condition-based waits. Wait for a meaningful event: an element becomes interactable, a record reaches the expected status, a response satisfies a defined condition, or a background operation reports completion. Every wait should still have a finite timeout; an unlimited wait converts a flaky failure into a hanging pipeline.</p>
+
+        <h3>3. Test-order dependency</h3>
+        <p>A test that passes only after another test is not independent. It is an undocumented workflow split across multiple test cases. Run suspicious tests individually, in randomized order, and in parallel. If the result changes, inspect setup and teardown logic, reused identifiers, global configuration, and data that survives between cases.</p>
+        <p>The fix is normally to move required preparation into an explicit fixture or setup step—not to enforce a permanent execution order.</p>
+
+        <h3>4. External dependencies</h3>
+        <p>Third-party APIs, shared environments, DNS, network latency, rate limits, and temporary service outages can make a deterministic test appear unstable. Decide what the test is supposed to prove. If it verifies internal behavior, replace the external dependency with a controlled stub or contract test. If it intentionally verifies the real integration, classify it accordingly and apply an appropriate execution policy.</p>
+        <p>Not every test belongs in the pull-request quality gate.</p>
+
+        <h3>5. Overly strict assertions</h3>
+        <p>A correct result can still fail because of insignificant differences in timestamps, floating-point calculations, generated identifiers, ordering, or eventually consistent data. Assertions should be precise about business behavior but tolerant of irrelevant variation. The answer is not weaker validation; it is validation aligned with the actual contract.</p>
+
+        <h2>Capture evidence on the first failure</h2>
+        <p>A rerun can remove the only visible trace of the problem. Before retrying, preserve enough evidence to reconstruct the original execution.</p>
+        <p>For UI tests, capture the screenshot, browser console output, current URL, relevant network failures, element locator, wait condition, and browser and driver versions. For API and integration tests, capture sanitized request and response metadata, the correlation identifier, response status and duration, dependency health, test-data identifier, and relevant service logs.</p>
+        <p>For every test, record the commit, execution node, attempt number, start time, duration, random seed, and parallel worker. Sensitive information must be masked. Diagnostic value does not require exposing credentials, personal data, or complete production-like payloads.</p>
+
+        <h2>Use retries as a diagnostic tool, not a cure</h2>
+        <p>A limited automatic rerun can keep delivery moving while evidence is collected. However, a passing retry does not convert the first failure into success. Report outcomes separately: passed on the first attempt, failed then passed on retry, failed on every attempt, or executed in quarantine.</p>
+        <p>Retries should be bounded and selective. Repeating the entire suite wastes resources and makes unrelated results harder to interpret. Retry only the failed test when isolation is guaranteed, preserve every attempt, and maintain a counter showing how often retries are needed. An increasing retry-pass rate is an early warning that test reliability is deteriorating.</p>
+
+        <h2>Quarantine must have an expiration date</h2>
+        <p>Quarantine can temporarily remove a known flaky test from the blocking quality gate. It should not become a permanent archive for inconvenient failures.</p>
+        <ul>
+          <li>Assign an owner and document the reason.</li>
+          <li>Link a defect or engineering task.</li>
+          <li>Record the quarantine date and a review deadline.</li>
+          <li>Continue running the test in a non-blocking stage.</li>
+        </ul>
+        <p>A quarantined test that is no longer executed provides no information. A quarantined test without an owner is effectively deleted, but with extra ceremony. If the behavior is already covered reliably at another level, deletion may be correct. Otherwise, repair or redesign it.</p>
+
+        <h2>Measure reliability as an engineering metric</h2>
+        <p>Counting flaky tests is not enough. Track first-attempt pass rate, retry-pass rate, flaky failures per 1,000 executions, median time in quarantine, root-cause category, pipeline time consumed by reruns, and repeated failures over a rolling period.</p>
+        <p>Measure at test level rather than only pipeline level. A suite with a 95% pass rate may contain one severely unstable test or hundreds of mildly unstable ones. Those situations require different responses.</p>
+
+        <h2>A sustainable flaky-test workflow</h2>
+        <ol>
+          <li>Preserve evidence from the first failure.</li>
+          <li>Rerun the failed test under controlled conditions.</li>
+          <li>Classify the likely cause.</li>
+          <li>Quarantine only when necessary.</li>
+          <li>Assign an owner and deadline.</li>
+          <li>Repair, replace, lower, or delete the test.</li>
+          <li>Run it repeatedly and in parallel before restoring it.</li>
+          <li>Monitor whether the same failure pattern returns.</li>
+        </ol>
+        <p>For browser automation, starting each test from a fresh browser profile is one of the strongest isolation boundaries. Selenium recommends a <a href="https://www.selenium.dev/documentation/test_practices/encouraged/fresh_browser_per_test/" target="_blank" rel="noopener">fresh browser per test</a> when fully disposable environments are impractical.</p>
+
+        <h2>Conclusion</h2>
+        <p>Flaky tests are not harmless noise. They are defects in the delivery system. Reruns can reduce short-term disruption, and quarantine can protect the quality gate temporarily. Neither should hide the original failure.</p>
+        <p>The durable solution is to control state, replace arbitrary delays, isolate dependencies, capture evidence, and make test reliability measurable. This is part of building a <a href="/insights/development-devops-quality-one-feedback-loop.html">shared engineering feedback loop</a> in which development, DevOps, and QA work from the same trustworthy signals.</p>
+
+        <footer class="article-footer">Written by <strong>Yalçın Yakar</strong> — exploring software engineering across development, DevOps, QA and complex systems.</footer>
+      </div>
+    </article>
+  </main>
+
+  <footer><span>© 2026 Yalçın Yakar</span><span>Software Engineering · DevOps · QA</span></footer>
+</body>
+</html>
