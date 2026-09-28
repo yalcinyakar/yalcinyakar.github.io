@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Diameter Troubleshooting: Why the Result Code Is Only the Starting Point | Yalçın Yakar</title>
+  <meta name="description" content="Learn how to troubleshoot Diameter failures using result-code classes, routing AVPs, correlation identifiers, peer state and end-to-end message analysis.">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="theme-color" content="#080a09">
+  <link rel="canonical" href="https://yalcinyakar.github.io/insights/diameter-troubleshooting-beyond-result-code.html">
+  <link rel="stylesheet" href="/styles.css">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Diameter Troubleshooting: Why the Result Code Is Only the Starting Point">
+  <meta property="og:description" content="A practical approach to Diameter troubleshooting across transport, peer state, routing, AVPs and retries.">
+  <meta property="og:url" content="https://yalcinyakar.github.io/insights/diameter-troubleshooting-beyond-result-code.html">
+  <meta property="og:image" content="https://yalcinyakar.github.io/assets/yalcin-yakar-it-engineer.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://yalcinyakar.github.io/assets/yalcin-yakar-it-engineer.jpg">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": "Diameter Troubleshooting: Why the Result Code Is Only the Starting Point",
+    "description": "Learn how to troubleshoot Diameter failures using result-code classes, routing AVPs, correlation identifiers, peer state and end-to-end message analysis.",
+    "datePublished": "2026-09-28",
+    "dateModified": "2026-09-28",
+    "mainEntityOfPage": "https://yalcinyakar.github.io/insights/diameter-troubleshooting-beyond-result-code.html",
+    "image": "https://yalcinyakar.github.io/assets/yalcin-yakar-it-engineer.jpg",
+    "author": {
+      "@type": "Person",
+      "name": "Yalçın Yakar",
+      "url": "https://yalcinyakar.github.io/",
+      "sameAs": ["https://www.linkedin.com/in/yalcinyakar", "https://github.com/yalcinyakar"]
+    }
+  }
+  </script>
+</head>
+<body>
+  <div class="noise" aria-hidden="true"></div>
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="Yalçın Yakar home"><span>YY</span><b>Yalçın Yakar</b></a>
+    <nav aria-label="Article navigation"><a href="/#about">About</a><a href="/#stack">Stack</a><a href="/#insights">Insights</a></nav>
+    <a class="nav-cta" href="https://www.linkedin.com/in/yalcinyakar" target="_blank" rel="me noopener">Connect <span aria-hidden="true">↗</span></a>
+  </header>
+
+  <main class="article-shell">
+    <a class="article-back" href="/#insights">← Back to insights</a>
+    <article>
+      <header class="article-header">
+        <p class="article-meta">Telecom Systems · September 28, 2026 · 8 min read</p>
+        <h1>Diameter Troubleshooting: Why the Result Code Is Only the Starting Point</h1>
+        <p class="article-deck">A Diameter result code tells you how a node classified a request. Finding the root cause requires reconstructing the transaction across transport, peer state, routing and application processing.</p>
+      </header>
+
+      <div class="article-body">
+        <p>Diameter failures are often investigated by searching for a single numeric result code. That is a useful first step, but rarely a complete diagnosis. The same code can be returned by different nodes for different underlying reasons, and the system that generates the answer may not be the system that owns the business operation.</p>
+        <p>Diameter is more than an application payload exchanged between two endpoints. It includes transport connections, peer capability negotiation, routing agents, sessions, failover behavior and application-specific AVPs. A reliable investigation must place the result code inside that larger path.</p>
+        <div class="article-callout">A Diameter result code is a direction sign, not a root cause.</div>
+
+        <h2>Start with the result-code class</h2>
+        <p>Before looking up an exact value, identify its class. The <a href="https://www.rfc-editor.org/rfc/rfc6733.html" target="_blank" rel="noopener">Diameter Base Protocol</a> defines five groups:</p>
+        <ul>
+          <li><code>1xxx</code>: informational responses.</li>
+          <li><code>2xxx</code>: successful requests.</li>
+          <li><code>3xxx</code>: protocol errors.</li>
+          <li><code>4xxx</code>: transient failures.</li>
+          <li><code>5xxx</code>: permanent failures.</li>
+        </ul>
+        <p>This classification shapes the investigation. A <code>3xxx</code> response often points toward routing, realm selection, capability negotiation or application support. A <code>4xxx</code> response says the condition may be temporary, but it does not authorize unlimited retries. A <code>5xxx</code> response usually means the request, its AVPs or the requested operation must change before another attempt can succeed.</p>
+        <p>The current assignments are maintained in the <a href="https://www.iana.org/assignments/aaa-parameters" target="_blank" rel="noopener">IANA AAA Parameters registry</a>. Use that registry and the relevant application specification instead of relying on an old internal cheat sheet.</p>
+
+        <h2>Identify which node generated the answer</h2>
+        <p>An answer can come from the intended destination, a relay, a proxy or another node that could not route the request any further. Inspect <code>Origin-Host</code>, <code>Origin-Realm</code>, <code>Error-Reporting-Host</code>, <code>Route-Record</code>, <code>Proxy-Info</code>, <code>Destination-Host</code> and <code>Destination-Realm</code>.</p>
+        <p>A relay may report that no route is available. A proxy may reject a request before it reaches the destination. The destination may accept the protocol exchange but reject the requested service. Mixing these cases sends teams toward the wrong component and delays resolution.</p>
+        <p>For a routing-related result, first validate realms, peer availability and advertised applications. Inspecting application data before proving that the request reached the expected server creates noise rather than evidence.</p>
+
+        <h2>Correlate the complete request and answer</h2>
+        <p>A log line containing only a result code is not enough. Capture the original request and its matching answer. At minimum, correlate:</p>
+        <ul>
+          <li>Command Code, request/answer flag and Application ID.</li>
+          <li>Hop-by-Hop Identifier and End-to-End Identifier.</li>
+          <li><code>Session-Id</code>, when the application uses one.</li>
+          <li>Origin and destination AVPs.</li>
+          <li>Request and answer timestamps with timezone.</li>
+        </ul>
+        <p>The Hop-by-Hop Identifier associates an answer with the request sent over a connection. The End-to-End Identifier supports duplicate detection as the message crosses Diameter agents. Both become especially important during failover, when a client may retransmit after losing a connection even though the original request already reached another node.</p>
+
+        <h2>Read the supporting error AVPs</h2>
+        <p>The numeric code summarizes the outcome; supporting AVPs can explain it. <code>Failed-AVP</code> may identify an omitted, unsupported, malformed or invalid AVP. <code>Error-Reporting-Host</code> identifies the host that detected an error when it differs from <code>Origin-Host</code>. <code>Error-Message</code> can help a human operator, although automation should not parse it as a stable contract.</p>
+        <p>Also inspect <code>Experimental-Result</code>. Some applications use a vendor-specific result structure rather than the base <code>Result-Code</code>. Monitoring that extracts only one of them will produce incomplete or misleading dashboards.</p>
+
+        <h2>Separate the failure into four layers</h2>
+        <h3>1. Transport</h3>
+        <p>Check whether the TCP or SCTP connection was established and stable. Look for resets, timeouts, association changes, packet loss and TLS failures where applicable. If no answer arrived, an application result code cannot explain the missing response.</p>
+
+        <h3>2. Peer state</h3>
+        <p>Confirm that capability exchange completed and the peer was open. Review watchdog behavior, disconnect events, advertised Application IDs and supported vendor information. A reachable IP address does not prove that two nodes have a usable Diameter relationship.</p>
+
+        <h3>3. Routing</h3>
+        <p>Validate the destination realm, optional destination host, route table, next-hop availability and application support. Determine which agent selected the next hop and why. Many routing failures are configuration or capability problems, not defects in the originating business request.</p>
+
+        <h3>4. Application processing</h3>
+        <p>Only after confirming delivery should the investigation move to AVP semantics, session state, authorization, policy, balance or service eligibility. This order reduces guesswork because each layer depends on the previous one.</p>
+
+        <h2>Build a reusable evidence bundle</h2>
+        <p>For each failed transaction, preserve a compact bundle: sanitized request and answer, exact timestamps, Command Code, Application ID, result structure, correlation identifiers, session identifier, origin and destination, peer state, retry count and the relevant configuration or deployment version.</p>
+        <p>Mask sensitive identifiers consistently so repeated values can still be correlated without exposing user, subscriber or operational data. A good escalation package allows another engineer to reconstruct the transaction without requesting a second round of basic evidence.</p>
+
+        <h2>Avoid blind retries</h2>
+        <p>Retry behavior must consider failure class, idempotency and session state. A bounded retry with backoff and jitter may be appropriate for selected transport or availability failures. Retrying malformed requests, unsupported applications or policy rejections only increases load. Retrying a non-idempotent operation without duplicate detection can create inconsistent outcomes.</p>
+        <p>A retry policy should define eligible conditions, maximum attempts, peer selection, duplicate detection and the outcome when the retry budget is exhausted. “Transient” describes how a node classified the condition; it does not mean “retry continuously.”</p>
+
+        <h2>Conclusion</h2>
+        <p>Reliable Diameter troubleshooting reconstructs the full path: transport, peer state, routing decision, destination processing, answer generation and any failover or retransmission. Once those layers are separated, investigations become faster and recurring failures become fixable instead of repeatedly rediscovered.</p>
+        <p>The same principle applies beyond telecom protocols: trustworthy diagnosis depends on preserving the first evidence and sharing it across the engineering flow. That is also why <a href="/insights/development-devops-quality-one-feedback-loop.html">development, DevOps and QA should share one feedback loop</a>.</p>
+
+        <footer class="article-footer">Written by <strong>Yalçın Yakar</strong> — exploring software engineering across development, DevOps, QA and complex systems.</footer>
+      </div>
+    </article>
+  </main>
+
+  <footer><span>© 2026 Yalçın Yakar</span><span>Software Engineering · DevOps · QA</span></footer>
+</body>
+</html>
