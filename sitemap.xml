@@ -1,15 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset
+  xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+  xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
   <url>
     <loc>https://yalcinyakar.github.io/</loc>
+    <lastmod>2026-09-28</lastmod>
+    <image:image>
+      <image:loc>https://yalcinyakar.github.io/assets/yalcin-yakar-it-engineer.jpg</image:loc>
+      <image:title>Yalçın Yakar, IT Engineer</image:title>
+    </image:image>
   </url>
   <url>
     <loc>https://yalcinyakar.github.io/insights/development-devops-quality-one-feedback-loop.html</loc>
+    <lastmod>2026-09-12</lastmod>
   </url>
   <url>
     <loc>https://yalcinyakar.github.io/insights/flaky-tests-ci-root-cause-strategy.html</loc>
+    <lastmod>2026-09-22</lastmod>
   </url>
   <url>
     <loc>https://yalcinyakar.github.io/insights/diameter-troubleshooting-beyond-result-code.html</loc>
+    <lastmod>2026-09-28</lastmod>
   </url>
 </urlset>
