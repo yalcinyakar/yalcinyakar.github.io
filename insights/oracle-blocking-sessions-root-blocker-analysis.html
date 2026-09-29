@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Oracle Blocking Sessions: How to Find the Root Blocker Without Guessing | Yalçın Yakar</title>
+  <meta name="description" content="Learn how to diagnose Oracle blocking sessions, trace wait chains, identify the root blocker and collect evidence before taking corrective action.">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="theme-color" content="#080a09">
+  <link rel="canonical" href="https://yalcinyakar.github.io/insights/oracle-blocking-sessions-root-blocker-analysis.html">
+  <link rel="stylesheet" href="/styles.css">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Oracle Blocking Sessions: How to Find the Root Blocker Without Guessing">
+  <meta property="og:description" content="A practical, evidence-driven approach to tracing Oracle wait chains and identifying the transaction at the root of a blocking incident.">
+  <meta property="og:url" content="https://yalcinyakar.github.io/insights/oracle-blocking-sessions-root-blocker-analysis.html">
+  <meta property="og:image" content="https://yalcinyakar.github.io/assets/yalcin-yakar-it-engineer.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://yalcinyakar.github.io/assets/yalcin-yakar-it-engineer.jpg">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": "Oracle Blocking Sessions: How to Find the Root Blocker Without Guessing",
+    "description": "Learn how to diagnose Oracle blocking sessions, trace wait chains, identify the root blocker and collect evidence before taking corrective action.",
+    "datePublished": "2026-09-29",
+    "dateModified": "2026-09-29",
+    "mainEntityOfPage": "https://yalcinyakar.github.io/insights/oracle-blocking-sessions-root-blocker-analysis.html",
+    "image": "https://yalcinyakar.github.io/assets/yalcin-yakar-it-engineer.jpg",
+    "author": {
+      "@type": "Person",
+      "name": "Yalçın Yakar",
+      "url": "https://yalcinyakar.github.io/",
+      "sameAs": ["https://www.linkedin.com/in/yalcinyakar", "https://github.com/yalcinyakar"]
+    }
+  }
+  </script>
+</head>
+<body>
+  <div class="noise" aria-hidden="true"></div>
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="Yalçın Yakar home"><span>YY</span><b>Yalçın Yakar</b></a>
+    <nav aria-label="Article navigation"><a href="/#about">About</a><a href="/#stack">Stack</a><a href="/#insights">Insights</a></nav>
+    <a class="nav-cta" href="https://www.linkedin.com/in/yalcinyakar" target="_blank" rel="me noopener">Connect <span aria-hidden="true">↗</span></a>
+  </header>
+
+  <main class="article-shell">
+    <a class="article-back" href="/#insights">← Back to insights</a>
+    <article>
+      <header class="article-header">
+        <p class="article-meta">Oracle &amp; SQL · September 29, 2026 · 9 min read</p>
+        <h1>Oracle Blocking Sessions: How to Find the Root Blocker Without Guessing</h1>
+        <p class="article-deck">A blocked session is only the visible end of a wait chain. Safe diagnosis means finding the final blocker, identifying the open transaction and preserving evidence before taking action.</p>
+      </header>
+
+      <div class="article-body">
+        <p>Oracle blocking incidents are often approached with one urgent question: “Which session should we kill?” That question comes too early.</p>
+        <p>A blocked session is only the visible end of a chain. The session holding the lock may itself be waiting for another session, the SQL currently displayed may not be the statement that acquired the lock, and an apparently inactive connection may still own an uncommitted transaction. Acting on the first session ID you find can remove the symptom while preserving—or worsening—the underlying problem.</p>
+        <div class="article-callout">Find the transaction at the head of the wait chain before deciding what to terminate.</div>
+
+        <h2>Blocking is not the same as slow SQL</h2>
+        <p>A slow statement consumes time because of execution work, resource pressure, an inefficient access path or waits such as I/O. A blocked statement cannot continue because another transaction owns a resource it needs.</p>
+        <p>If a session is waiting on an enqueue event such as <code>enq: TX - row lock contention</code>, query tuning alone is unlikely to solve the immediate incident. First determine which session is waiting, which session is blocking it, whether that blocker is itself blocked, and which application operation left the transaction open.</p>
+        <p>Oracle exposes this information through dynamic performance and data dictionary views including <code>V$SESSION</code>, <code>V$LOCK</code>, <code>V$LOCKED_OBJECT</code>, <code>DBA_BLOCKERS</code> and <code>DBA_WAITERS</code>.</p>
+
+        <h2>Start with the waiters</h2>
+        <p>A practical first query is to locate sessions for which Oracle has identified a blocker:</p>
+        <pre><code>SELECT
+    sid,
+    serial#,
+    username,
+    status,
+    event,
+    seconds_in_wait,
+    blocking_instance,
+    blocking_session,
+    final_blocking_instance,
+    final_blocking_session,
+    sql_id,
+    module,
+    action
+FROM v$session
+WHERE blocking_session_status = 'VALID'
+ORDER BY seconds_in_wait DESC;</code></pre>
+        <p><code>BLOCKING_SESSION</code> identifies the immediate blocker. <code>FINAL_BLOCKING_SESSION</code> identifies the last session Oracle reaches when it follows the wait chain. If session A waits for B and B waits for C, B is A’s immediate blocker but C is the root blocker that deserves the closest investigation.</p>
+        <p>Do not treat every lock as an incident. Locks are part of normal transactional consistency. The operational problem begins when duration or impact exceeds what the application workflow reasonably requires.</p>
+
+        <h2>Reconstruct the chain in Oracle RAC</h2>
+        <p>For a single-instance database, <code>V$SESSION</code> may be sufficient. In Oracle RAC, use <code>GV$SESSION</code> and match both the instance and session identifiers:</p>
+        <pre><code>SELECT
+    w.inst_id AS waiting_inst,
+    w.sid AS waiting_sid,
+    w.serial# AS waiting_serial,
+    w.event,
+    w.seconds_in_wait,
+    w.sql_id AS waiting_sql_id,
+    b.inst_id AS blocker_inst,
+    b.sid AS blocker_sid,
+    b.serial# AS blocker_serial,
+    b.username AS blocker_user,
+    b.status AS blocker_status,
+    b.sql_id AS blocker_sql_id,
+    b.module AS blocker_module,
+    b.action AS blocker_action
+FROM gv$session w
+LEFT JOIN gv$session b
+       ON b.inst_id = w.blocking_instance
+      AND b.sid = w.blocking_session
+WHERE w.blocking_session_status = 'VALID'
+ORDER BY w.seconds_in_wait DESC;</code></pre>
+        <p>This produces a relationship instead of an isolated SID. Compare each immediate blocker with the final blocker values to locate the head of the chain. Cross-instance investigations should keep the instance identifier attached to every SID because session identifiers alone are not globally unique.</p>
+
+        <h2>An inactive session can still be the blocker</h2>
+        <p>One of the most misleading observations during an incident is: “The blocking session is inactive, so it cannot be doing anything.” In Oracle, <code>INACTIVE</code> means the session is not currently executing a database call. It does not mean its transaction was committed or rolled back.</p>
+        <p>A common pattern is simple: an application updates a row, leaves the transaction open and then waits for more application work. The database session appears inactive while another session attempts to update the same resource and starts waiting.</p>
+        <p>This often points to transaction-boundary problems: missing commits or rollbacks, exception paths that leave work open, overly broad transaction scopes, user interaction inside a transaction or connection-pool behavior that returns a connection in an unsafe state.</p>
+
+        <h2>The current SQL may not have acquired the lock</h2>
+        <p>The blocker’s current <code>SQL_ID</code> is useful, but the statement that acquired the lock may have executed earlier in the same transaction. Preserve the current and previous SQL identifiers together with waiting and blocking instance, SID and serial number; immediate and final blockers; wait event and duration; service, machine, program, module and action; transaction start details; locked objects; correlation identifiers; and exact timestamps.</p>
+        <p>This evidence connects a database observation to an application operation instead of ending the investigation with “session 417 caused it.” Application instrumentation helps: <code>DBMS_APPLICATION_INFO</code> can register meaningful <code>MODULE</code> and <code>ACTION</code> values that are visible through Oracle performance views.</p>
+        <pre><code>BEGIN
+    DBMS_APPLICATION_INFO.SET_MODULE(
+        module_name =&gt; 'order-processing',
+        action_name =&gt; 'reserve-inventory'
+    );
+END;
+/</code></pre>
+        <p>Use generic operation names and avoid exposing sensitive identifiers. A meaningful module and action can turn reverse engineering of connection details into direct ownership of the affected workflow.</p>
+
+        <h2>Do not kill the blocker blindly</h2>
+        <p>Terminating a session is an operational action, not a diagnosis. Before doing so, determine whether the transaction is still making legitimate progress, how many sessions are affected, whether termination will trigger a large rollback, whether the operation is retry-safe and whether the application will immediately recreate the same condition.</p>
+        <p>Killing the root blocker may restore throughput, but it can also replace lock waits with rollback load, retries, duplicate requests or another blocking chain. Preserve the evidence before emergency action changes the database state.</p>
+
+        <h2>Prevent the next blocking incident</h2>
+        <ul>
+          <li>Keep transactions as short as the consistency requirement allows.</li>
+          <li>Never wait for user input while holding database locks.</li>
+          <li>Commit or roll back reliably on every success and failure path.</li>
+          <li>Access shared resources in a consistent order.</li>
+          <li>Use bounded lock timeouts where the business flow permits.</li>
+          <li>Instrument pooled sessions with module and action names.</li>
+          <li>Alert on blocking duration and impact, not merely the presence of a lock.</li>
+          <li>Preserve first-failure evidence before automated recovery changes the state.</li>
+        </ul>
+
+        <h2>Conclusion</h2>
+        <p>The important Oracle lock question is not “Which SID is blocking?” It is “Which transaction sits at the head of the wait chain, why is it still open, and which application operation owns it?”</p>
+        <p>By separating the waiter, immediate blocker and final blocker—and correlating them with transaction and application metadata—teams can respond safely and turn a temporary database incident into a permanent engineering improvement. The same evidence-first principle is essential when <a href="/insights/flaky-tests-ci-root-cause-strategy.html">restoring trust in flaky CI tests</a> or <a href="/insights/diameter-troubleshooting-beyond-result-code.html">tracing Diameter failures across multiple layers</a>.</p>
+
+        <footer class="article-footer">Written by <strong>Yalçın Yakar</strong> — exploring software engineering across development, DevOps, QA and complex systems.</footer>
+      </div>
+    </article>
+  </main>
+
+  <footer><span>© 2026 Yalçın Yakar</span><span>Software Engineering · DevOps · QA</span></footer>
+</body>
+</html>
