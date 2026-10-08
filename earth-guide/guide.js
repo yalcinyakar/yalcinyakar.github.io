@@ -35,15 +35,14 @@ function loadSignals() {
       const time = document.createElement("time"); const date = new Date(item.date);
       if (!Number.isNaN(date.getTime())) { time.dateTime = date.toISOString(); time.textContent = date.toLocaleDateString("en", {day:"numeric",month:"short",year:"numeric"}); }
       meta.append(name, time);
-      const kind = document.createElement("span"); kind.className = "signal-kind"; kind.textContent = ["Hello","Question","Correction"].includes(item.kind) ? item.kind : "Hello";
       const text = document.createElement("p"); text.textContent = item.message.slice(0,2000);
-      card.append(kind,text,meta); list.append(card);
+      card.append(text,meta); list.append(card);
     });
     const count = list.children.length;
     document.querySelector("#wall-count").textContent = count + (count === 1 ? " published signal" : " published signals");
     document.querySelector("#wall-empty").hidden = count > 0;
-    document.querySelector("#wall-empty p").textContent = "Be the first to leave a signal. New messages appear after review.";
-    wallStatus.textContent = "Latest published signals · refreshed just now";
+    document.querySelector("#wall-empty p").textContent = "Leave the first message.";
+    wallStatus.textContent = "";
   };
   function failed() { cleanup(); wallStatus.textContent = "Could not load signals. Existing messages remain visible; try refresh."; }
   const url = new URL(SIGNAL_ENDPOINT); url.searchParams.set("callback", callback); url.searchParams.set("t", Date.now());
@@ -52,21 +51,21 @@ function loadSignals() {
 }
 if (configured) {
   form.action = SIGNAL_ENDPOINT; unlock(); state.textContent = "READY";
-  status.textContent = "No account or email needed. Your message is public only after review.";
+  status.textContent = "";
   document.querySelector("#refresh-signals").hidden = false; loadSignals();
 }
 document.querySelector("#refresh-signals").addEventListener("click", loadSignals);
 form.addEventListener("submit", (event) => {
   if (!configured || pending) { event.preventDefault(); return; }
-  if (!form.reportValidity() || !field.value.trim()) { event.preventDefault(); status.textContent = "Write a message and agree to publication."; return; }
+  if (!form.reportValidity() || !field.value.trim() || !document.querySelector("#callsign").value.trim()) { event.preventDefault(); status.textContent = "Enter your nick and message."; return; }
   if (document.querySelector("#website").value) { event.preventDefault(); return; }
-  const fingerprint = JSON.stringify([field.value.trim(),document.querySelector("#callsign").value.trim(),form.querySelector('input[name="kind"]:checked').value]);
+  const fingerprint = JSON.stringify([field.value.trim(),document.querySelector("#callsign").value.trim(),"Hello"]);
   if (requestFingerprint !== fingerprint) { requestId = randomId(); requestFingerprint = fingerprint; }
   const nonce = randomId(); document.querySelector("#signal-nonce").value = nonce; document.querySelector("#signal-request-id").value = requestId;
   send.disabled = true; label.textContent = "Transmitting…"; state.textContent = "SENDING"; status.textContent = "Waiting for receipt…";
   pending = {nonce, timer:setTimeout(() => {
     pending = null; unlock(); state.textContent = "RETRY";
-    status.textContent = "No receipt received. Your message is still here. You may retry; the same transmission will not be saved twice.";
+    status.textContent = "No receipt received. Please retry.";
   },25000)};
 });
 window.addEventListener("message", (event) => {
@@ -76,7 +75,7 @@ window.addEventListener("message", (event) => {
   if (!trusted || event.data.type !== "earth-signal-receipt" || event.data.nonce !== pending.nonce) return;
   clearTimeout(pending.timer); pending = null; unlock();
   if (event.data.ok === true) {
-    status.textContent = "Signal received. It will appear on the wall after review."; state.textContent = "RECEIVED";
+    status.textContent = "Message sent."; state.textContent = "RECEIVED";
     form.reset(); countCharacters(); requestId = ""; requestFingerprint = "";
   } else {
     status.textContent = event.data.code === "busy" ? "The channel is busy. Your message is saved here; try again shortly." : "The server could not save your signal. Your message is still here.";
