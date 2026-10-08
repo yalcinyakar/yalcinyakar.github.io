@@ -19,10 +19,13 @@ The initial edition contains 39 sourced notes across 13 domains. It is a growing
 - Keep the personal portfolio and unrelated subprojects unchanged.
 
 ## Visitor messages
-The form prepares a GitHub issue titled [Earth Guide]. It redirects to GitHub for user review and submission; it does not submit or store a message by itself.
-Messages are public, require a GitHub account and are readable at:
-https://github.com/yalcinyakar/yalcinyakar.github.io/issues?q=is%3Aissue%20%22%5BEarth%20Guide%5D%22
-No secret tokens are embedded in the client. No claim of anonymous or private delivery.
+Signal Wall uses a private Google Sheet and an anonymous Apps Script web app.
+See signal-backend/SETUP.md and Code.gs. Set SIGNAL_ENDPOINT in guide.js only after owner deployment.
+Until configured, sending stays disabled with an explicit status.
+Visitors need neither email nor account. They consent to public publication.
+New messages are pending; only approved rows are returned by the public read endpoint.
+Keep this integration intact during automated content additions.
+Never publish fictitious visitor messages or report delivery without a backend receipt.
 
 ## Expansion queue
 Deepen navigation and geodesy, electromagnetic radiation, geological time, biodiversity, agriculture, public health principles, world history, formal logic, computation, institutions, and comparative cultural practices. Add depth before claiming comprehensive coverage.
