@@ -67,6 +67,7 @@ h1 em { color: var(--lime); font-family: Georgia, "Times New Roman", serif; font
 .experience-title { display: grid; grid-template-columns: auto 1fr; align-items: start; gap: 24px; }
 .experience-title strong { color: var(--lime); font-size: clamp(3.4rem, 6vw, 6.2rem); line-height: .84; letter-spacing: -.08em; }
 .experience-title h2 { margin: 0; }
+.ai-card { grid-column: 1 / -1; }
 .stack-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
 .stack-card { min-height: 410px; padding: clamp(28px, 4vw, 48px); background: var(--panel); border: 1px solid var(--line); transition: transform .25s ease, border-color .25s ease, background .25s ease; }
 .stack-card:hover { transform: translateY(-5px); border-color: rgba(200,255,77,.6); background: var(--panel-2); }
