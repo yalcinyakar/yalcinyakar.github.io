@@ -4,7 +4,7 @@ search.addEventListener('input',filter);category.addEventListener('change',filte
 function revealHash(){const el=document.getElementById(location.hash.slice(1));if(el&&el.classList.contains('entry')){search.value='';category.value='';filter();el.querySelector('details').open=true;el.scrollIntoView({block:'start',behavior:'auto'})}}window.addEventListener('hashchange',revealHash);revealHash();
 
 /* Set only after deploying the provided Apps Script with anonymous access. */
-const SIGNAL_ENDPOINT = "";
+const SIGNAL_ENDPOINT = "https://script.google.com/macros/s/AKfycbx1cpEe2UcEe9c1DzMHKP1NoloHKDE3aiiPWYDA_UUifG5uSS1-sX-FlCiSieqUFWG-/exec";
 const configured = /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(SIGNAL_ENDPOINT);
 const form = document.querySelector("#message-form"), field = document.querySelector("#message");
 const send = document.querySelector("#send-signal"), label = document.querySelector("#send-label");
