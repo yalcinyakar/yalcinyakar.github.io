@@ -8,7 +8,7 @@ function initializeInbox() {
   let sheet = book.getSheetByName("Signals") || book.insertSheet("Signals");
   if (!sheet.getLastRow()) sheet.appendRow(HEADERS);
   sheet.setFrozenRows(1);
-  sheet.getRange("F2:F1000").setDataValidation(SpreadsheetApp.newDataValidation().requireCheckbox().build());
+  if (sheet.getLastRow() > 1) sheet.getRange(2,6,sheet.getLastRow()-1,1).setDataValidation(SpreadsheetApp.newDataValidation().requireCheckbox().build());
 }
 function inbox_() {
   const id = PropertiesService.getScriptProperties().getProperty("SHEET_ID");
@@ -56,7 +56,11 @@ function doPost(e) {
     const props=PropertiesService.getScriptProperties(),day=new Date().toISOString().slice(0,10);
     let usage=JSON.parse(props.getProperty("DAILY_USAGE")||"{}"); if(usage.day!==day)usage={day,count:0};
     if(usage.count>=200) return receipt_(nonce,false,"busy");
-    sheet.appendRow([Utilities.getUuid(),new Date().toISOString(),sheetText_(name),kind,sheetText_(message),false,requestId]);
+    sheet.insertRowAfter(1);
+    sheet.getRange(2,1,1,HEADERS.length).clearFormat();
+    sheet.getRange(2,6).setDataValidation(SpreadsheetApp.newDataValidation().requireCheckbox().build());
+    sheet.getRange(2,1,1,HEADERS.length).setValues([[Utilities.getUuid(),new Date().toISOString(),sheetText_(name),kind,sheetText_(message),false,requestId]]);
+    SpreadsheetApp.flush();
     usage.count++;props.setProperty("DAILY_USAGE",JSON.stringify(usage));
     return receipt_(nonce,true,"pending");
   } catch(error) { return receipt_(nonce,false,"unavailable"); }
