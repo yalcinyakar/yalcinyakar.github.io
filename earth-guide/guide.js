@@ -13,12 +13,12 @@ let pending = null, requestId = "", requestFingerprint = "", wallLoading = false
 function randomId() { return crypto.randomUUID(); }
 function countCharacters() { document.querySelector("#message-count").textContent = field.value.length.toLocaleString("en") + " / 2,000"; }
 field.addEventListener("input", countCharacters);
-function unlock() { send.disabled = !configured; label.textContent = configured ? "Send signal" : "Channel opening soon"; }
+function unlock() { send.disabled = !configured; label.textContent = configured ? "Send to Earth" : "Channel opening soon"; }
 function loadSignals() {
   if (!configured || wallLoading) return;
   wallLoading = true;
   const wallStatus = document.querySelector("#wall-status");
-  wallStatus.textContent = "Receiving signals…";
+  wallStatus.textContent = "Listening to the cosmos…";
   const callback = "earthSignals_" + randomId().replaceAll("-", "");
   const script = document.createElement("script");
   let timer;
@@ -41,7 +41,7 @@ function loadSignals() {
     const count = list.children.length;
     document.querySelector("#wall-count").textContent = count + (count === 1 ? " published signal" : " published signals");
     document.querySelector("#wall-empty").hidden = count > 0;
-    document.querySelector("#wall-empty p").textContent = "Leave the first message.";
+    document.querySelector("#wall-empty p").textContent = "Make first contact. A simple hello will do.";
     wallStatus.textContent = "";
   };
   function failed() { cleanup(); wallStatus.textContent = "Could not load signals. Existing messages remain visible; try refresh."; }
@@ -62,7 +62,7 @@ form.addEventListener("submit", (event) => {
   const fingerprint = JSON.stringify([field.value.trim(),document.querySelector("#callsign").value.trim(),"Hello"]);
   if (requestFingerprint !== fingerprint) { requestId = randomId(); requestFingerprint = fingerprint; }
   const nonce = randomId(); document.querySelector("#signal-nonce").value = nonce; document.querySelector("#signal-request-id").value = requestId;
-  send.disabled = true; label.textContent = "Transmitting…"; state.textContent = "SENDING"; status.textContent = "Waiting for receipt…";
+  send.disabled = true; label.textContent = "Contacting Earth…"; state.textContent = "SENDING"; status.textContent = "Waiting for receipt…";
   pending = {nonce, timer:setTimeout(() => {
     pending = null; unlock(); state.textContent = "RETRY";
     status.textContent = "No receipt received. Please retry.";
@@ -75,7 +75,7 @@ window.addEventListener("message", (event) => {
   if (!trusted || event.data.type !== "earth-signal-receipt" || event.data.nonce !== pending.nonce) return;
   clearTimeout(pending.timer); pending = null; unlock();
   if (event.data.ok === true) {
-    status.textContent = "Message sent."; state.textContent = "RECEIVED";
+    status.textContent = "Earth got your message."; state.textContent = "RECEIVED";
     form.reset(); countCharacters(); requestId = ""; requestFingerprint = "";
   } else {
     status.textContent = event.data.code === "busy" ? "The channel is busy. Your message is saved here; try again shortly." : "The server could not save your signal. Your message is still here.";
