@@ -23,3 +23,6 @@ The form prepares a GitHub issue titled [Earth Guide]. It redirects to GitHub fo
 Messages are public, require a GitHub account and are readable at:
 https://github.com/yalcinyakar/yalcinyakar.github.io/issues?q=is%3Aissue%20%22%5BEarth%20Guide%5D%22
 No secret tokens are embedded in the client. No claim of anonymous or private delivery.
+
+## Expansion queue
+Deepen navigation and geodesy, electromagnetic radiation, geological time, biodiversity, agriculture, public health principles, world history, formal logic, computation, institutions, and comparative cultural practices. Add depth before claiming comprehensive coverage.
