@@ -37,6 +37,7 @@ Deepen navigation and geodesy, electromagnetic radiation, geological time, biodi
 - This is an independent educational project, not NASA or an official government department.
 
 ## Latest expansion
+- 10 Oct 2026 · entry-61 · Communication / linguistic pragmatics: context, deixis, implicature and the gap between literal wording and intended action (Stanford Encyclopedia of Philosophy / SIL Global).
 - 10 Oct 2026 · entry-60 · Human history / urbanization: Uruk, early urban institutions and why modern urban boundaries depend on stated statistical definitions (The Met / UN DESA / UNFPA).
 - 10 Oct 2026 · entry-59 · Technology / networking: IP datagrams, TCP reliability and UDP delivery semantics (IETF RFCs).
 - 09 Oct 2026 · entry-58 · Mathematics / metrology: accuracy, precision, uncertainty and significant figures (NIST / OpenStax).
@@ -58,5 +59,5 @@ Deepen navigation and geodesy, electromagnetic radiation, geological time, biodi
 - 09 Oct 2026 · entry-42 · Ecology: decomposers, detrital food webs, directional energy flow and recycled matter (OpenStax).
 - 09 Oct 2026 · entry-41 · Life: DNA, the nearly universal genetic code and regulated gene expression (NHGRI / OpenStax).
 - 09 Oct 2026 · entry-40 · Chemistry: water density, floating ice and freshwater lake layering (USGS).
-- Current archive: 60 notes. Next expansion: prioritize Communication / language pragmatics, then rotate domains.
+- Current archive: 61 notes. Next expansion: prioritize Human biology / immune recognition, then rotate domains.
 
