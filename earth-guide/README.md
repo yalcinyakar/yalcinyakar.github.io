@@ -37,6 +37,7 @@ Deepen navigation and geodesy, electromagnetic radiation, geological time, biodi
 - This is an independent educational project, not NASA or an official government department.
 
 ## Latest expansion
+- 09 Oct 2026 · entry-57 · Oceans: tidal, wind-driven and density-driven circulation (NOAA).
 - 09 Oct 2026 · entry-56 · Ecology: non-native versus invasive species and transport pathways (CBD / NOAA).
 - 09 Oct 2026 · entry-55 · Atmospheric chemistry: stratospheric protection and ground-level ozone pollution (NOAA / EPA / OpenStax).
 - 09 Oct 2026 · entry-54 · Culture: ethnocentrism, contextual interpretation and variation within societies (OpenStax).
@@ -54,5 +55,5 @@ Deepen navigation and geodesy, electromagnetic radiation, geological time, biodi
 - 09 Oct 2026 · entry-42 · Ecology: decomposers, detrital food webs, directional energy flow and recycled matter (OpenStax).
 - 09 Oct 2026 · entry-41 · Life: DNA, the nearly universal genetic code and regulated gene expression (NHGRI / OpenStax).
 - 09 Oct 2026 · entry-40 · Chemistry: water density, floating ice and freshwater lake layering (USGS).
-- Current archive: 56 notes. Next expansion: prioritize Ocean circulation / oceans, then rotate domains.
+- Current archive: 57 notes. Next expansion: prioritize Measurement uncertainty / mathematics, then rotate domains.
 
