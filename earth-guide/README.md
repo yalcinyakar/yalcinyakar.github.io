@@ -29,3 +29,7 @@ Never publish fictitious visitor messages or report delivery without a backend r
 
 ## Expansion queue
 Deepen navigation and geodesy, electromagnetic radiation, geological time, biodiversity, agriculture, public health principles, world history, formal logic, computation, institutions, and comparative cultural practices. Add depth before claiming comprehensive coverage.
+
+## Latest expansion
+- 09 Oct 2026 · entry-40 · Chemistry: water density, floating ice and freshwater lake layering (USGS).
+- Current archive: 40 notes. Next expansion: prioritize Life / biology, then rotate domains.
