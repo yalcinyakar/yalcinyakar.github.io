@@ -37,6 +37,7 @@ Deepen navigation and geodesy, electromagnetic radiation, geological time, biodi
 - This is an independent educational project, not NASA or an official government department.
 
 ## Latest expansion
+- 09 Oct 2026 · entry-48 · Technology / computation: bit patterns require agreed representations and machine code depends on architecture (OpenStax).
 - 09 Oct 2026 · entry-47 · Mathematics / formal logic: deductive validity, soundness and counterexample testing (OpenStax).
 - 09 Oct 2026 · entry-46 · Language: signed languages are complete natural languages with their own grammar and regional variation (NIDCD / OpenStax).
 - 09 Oct 2026 · entry-45 · Human history: agriculture emerged independently, unevenly and with social tradeoffs (OpenStax).
@@ -45,5 +46,5 @@ Deepen navigation and geodesy, electromagnetic radiation, geological time, biodi
 - 09 Oct 2026 · entry-42 · Ecology: decomposers, detrital food webs, directional energy flow and recycled matter (OpenStax).
 - 09 Oct 2026 · entry-41 · Life: DNA, the nearly universal genetic code and regulated gene expression (NHGRI / OpenStax).
 - 09 Oct 2026 · entry-40 · Chemistry: water density, floating ice and freshwater lake layering (USGS).
-- Current archive: 47 notes. Next expansion: prioritize Technology / computation, then rotate domains.
+- Current archive: 48 notes. Next expansion: prioritize Society / institutions, then rotate domains.
 
