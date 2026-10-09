@@ -32,8 +32,8 @@ Deepen navigation and geodesy, electromagnetic radiation, geological time, biodi
 
 ## Visual and editorial direction
 - Preserve the sober 1970s aerospace-documentary identity: navy, warm ivory, restrained blue, square technical panels and archival typography. No cartoon aliens, neon colours or playful stickers.
-- Use assets/earth-silhouettes.webp as the hero and social image. It is an AI-generated fictional extraterrestrial silhouettes in blue-green mist, not a historical photograph. Keep its caption visible.
-- Keep interface and institutional headings formal. Field notes may use dry, understated, troll-like observational humour alongside verified facts.
+- Use assets/earth-silhouettes.webp as the hero and social image. It is an AI-generated fictional extraterrestrial silhouettes in blue-green mist, not a historical photograph. Do not add a visible FICTIONAL / AI-GENERATED badge; retain descriptive image alt text.
+- Keep the visual design serious and institutional, but restore dry, deadpan, lightly troll-like humour throughout the hero, headings, interface and field notes. The contrast is intentional: an official-looking archive with witty narration. Preserve clear error states and verified factual content.
 - This is an independent educational project, not NASA or an official government department.
 
 ## Latest expansion
