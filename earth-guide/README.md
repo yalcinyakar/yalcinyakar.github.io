@@ -30,6 +30,12 @@ Never publish fictitious visitor messages or report delivery without a backend r
 ## Expansion queue
 Deepen navigation and geodesy, electromagnetic radiation, geological time, biodiversity, agriculture, public health principles, world history, formal logic, computation, institutions, and comparative cultural practices. Add depth before claiming comprehensive coverage.
 
+## Visual and editorial direction
+- Preserve the sober 1970s aerospace-documentary identity: navy, warm ivory, restrained blue, square technical panels and archival typography. No cartoon aliens, neon colours or playful stickers.
+- Use assets/earth-archive.webp as the hero and social image. It is an AI-generated fictional extraterrestrial study, not a historical photograph. Keep its caption visible.
+- Keep interface and institutional headings formal. Field notes may use dry, understated, troll-like observational humour alongside verified facts.
+- This is an independent educational project, not NASA or an official government department.
+
 ## Latest expansion
 - 09 Oct 2026 · entry-44 · Geography: unavoidable map-projection distortion and purpose-specific tradeoffs (USGS).
 - 09 Oct 2026 · entry-43 · Oceans: salinity, dissolved salts and pressure with depth (NOAA).
@@ -37,3 +43,4 @@ Deepen navigation and geodesy, electromagnetic radiation, geological time, biodi
 - 09 Oct 2026 · entry-41 · Life: DNA, the nearly universal genetic code and regulated gene expression (NHGRI / OpenStax).
 - 09 Oct 2026 · entry-40 · Chemistry: water density, floating ice and freshwater lake layering (USGS).
 - Current archive: 44 notes. Next expansion: prioritize Humans / history, then rotate domains.
+
