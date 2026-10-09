@@ -37,10 +37,11 @@ Deepen navigation and geodesy, electromagnetic radiation, geological time, biodi
 - This is an independent educational project, not NASA or an official government department.
 
 ## Latest expansion
+- 09 Oct 2026 · entry-45 · Human history: agriculture emerged independently, unevenly and with social tradeoffs (OpenStax).
 - 09 Oct 2026 · entry-44 · Geography: unavoidable map-projection distortion and purpose-specific tradeoffs (USGS).
 - 09 Oct 2026 · entry-43 · Oceans: salinity, dissolved salts and pressure with depth (NOAA).
 - 09 Oct 2026 · entry-42 · Ecology: decomposers, detrital food webs, directional energy flow and recycled matter (OpenStax).
 - 09 Oct 2026 · entry-41 · Life: DNA, the nearly universal genetic code and regulated gene expression (NHGRI / OpenStax).
 - 09 Oct 2026 · entry-40 · Chemistry: water density, floating ice and freshwater lake layering (USGS).
-- Current archive: 44 notes. Next expansion: prioritize Humans / history, then rotate domains.
+- Current archive: 45 notes. Next expansion: prioritize Language / culture, then rotate domains.
 
