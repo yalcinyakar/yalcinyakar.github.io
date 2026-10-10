@@ -37,6 +37,7 @@ Deepen navigation and geodesy, electromagnetic radiation, geological time, biodi
 - This is an independent educational project, not NASA or an official government department.
 
 ## Latest expansion
+- 10 Oct 2026 · entry-63 · Society / collective action: public goods, free riders, common-pool resources and plural governance arrangements (OpenStax / Nobel Prize).
 - 10 Oct 2026 · entry-62 · Human biology / immune recognition: innate pattern recognition, adaptive antigen specificity, immune memory and tolerance (OpenStax / NIH MedlinePlus).
 - 10 Oct 2026 · entry-61 · Communication / linguistic pragmatics: context, deixis, implicature and the gap between literal wording and intended action (Stanford Encyclopedia of Philosophy / SIL Global).
 - 10 Oct 2026 · entry-60 · Human history / urbanization: Uruk, early urban institutions and why modern urban boundaries depend on stated statistical definitions (The Met / UN DESA / UNFPA).
@@ -60,5 +61,5 @@ Deepen navigation and geodesy, electromagnetic radiation, geological time, biodi
 - 09 Oct 2026 · entry-42 · Ecology: decomposers, detrital food webs, directional energy flow and recycled matter (OpenStax).
 - 09 Oct 2026 · entry-41 · Life: DNA, the nearly universal genetic code and regulated gene expression (NHGRI / OpenStax).
 - 09 Oct 2026 · entry-40 · Chemistry: water density, floating ice and freshwater lake layering (USGS).
-- Current archive: 62 notes. Next expansion: prioritize Society / collective action and public goods, then rotate domains.
+- Current archive: 63 notes. Next expansion: prioritize Physics / sound and pressure waves, then rotate domains.
 
