@@ -37,6 +37,7 @@ Deepen navigation and geodesy, electromagnetic radiation, geological time, biodi
 - This is an independent educational project, not NASA or an official government department.
 
 ## Latest expansion
+- 10 Oct 2026 · entry-67 · Oceans / dissolved oxygen: measurement context, hypoxia, nutrient-driven oxygen loss and stratification (EPA / NOAA).
 - 10 Oct 2026 · entry-66 · Ecology / population limits: exponential and logistic models, carrying capacity, density effects and changing habitats (OpenStax).
 - 10 Oct 2026 · entry-65 · Chemistry / kinetics and equilibrium: measurable reaction rates, collision theory, catalysis and dynamic equilibrium (OpenStax).
 - 10 Oct 2026 · entry-64 · Physics / sound and pressure waves: mechanical media, compressions and rarefactions, medium-dependent speed and perception limits (OpenStax).
@@ -64,5 +65,5 @@ Deepen navigation and geodesy, electromagnetic radiation, geological time, biodi
 - 09 Oct 2026 · entry-42 · Ecology: decomposers, detrital food webs, directional energy flow and recycled matter (OpenStax).
 - 09 Oct 2026 · entry-41 · Life: DNA, the nearly universal genetic code and regulated gene expression (NHGRI / OpenStax).
 - 09 Oct 2026 · entry-40 · Chemistry: water density, floating ice and freshwater lake layering (USGS).
-- Current archive: 66 notes. Next expansion: prioritize Oceans / dissolved oxygen and hypoxia, then rotate domains.
+- Current archive: 67 notes. Next expansion: prioritize Geography / elevation and geodetic reference, then rotate domains.
 
