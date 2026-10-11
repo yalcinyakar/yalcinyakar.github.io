@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>The Model Is Not the System: Harness Engineering for Reliable AI Agents | Yalçın Yakar</title>
+  <meta name="description" content="Build reliable AI agents with durable task state, isolated tools, crash recovery, and evidence-based verification. Includes a runnable Python checkpoint demo.">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="theme-color" content="#080a09">
+  <link rel="canonical" href="https://yalcinyakar.github.io/insights/harness-engineering-reliable-ai-agents.html">
+  <link rel="stylesheet" href="/styles.css">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="The Model Is Not the System: Harness Engineering for Reliable AI Agents">
+  <meta property="og:description" content="An agent that survives a demo is useful. An agent that survives a crash, resumes correctly, and proves its work is engineering.">
+  <meta property="og:url" content="https://yalcinyakar.github.io/insights/harness-engineering-reliable-ai-agents.html">
+  <meta property="og:image" content="https://yalcinyakar.github.io/assets/yalcin-yakar-it-engineer.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://yalcinyakar.github.io/assets/yalcin-yakar-it-engineer.jpg">
+  <script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "The Model Is Not the System: Harness Engineering for Reliable AI Agents",
+  "description": "Build reliable AI agents with durable task state, isolated tools, crash recovery, and evidence-based verification. Includes a runnable Python checkpoint demo.",
+  "datePublished": "2026-10-12",
+  "dateModified": "2026-10-12",
+  "mainEntityOfPage": "https://yalcinyakar.github.io/insights/harness-engineering-reliable-ai-agents.html",
+  "image": "https://yalcinyakar.github.io/assets/yalcin-yakar-it-engineer.jpg",
+  "author": {
+    "@type": "Person",
+    "name": "Yalçın Yakar",
+    "url": "https://yalcinyakar.github.io/"
+  }
+}</script>
+</head>
+<body>
+  <div class="noise" aria-hidden="true"></div>
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="Yalçın Yakar home"><span>YY</span><b>Yalçın Yakar</b></a>
+    <nav aria-label="Article navigation"><a href="/#about">About</a><a href="/#stack">Stack</a><a href="/#insights">Insights</a></nav>
+    <a class="nav-cta" href="https://www.linkedin.com/in/yalcinyakar" target="_blank" rel="me noopener">Connect <span aria-hidden="true">↗</span></a>
+  </header>
+
+  <main class="article-shell">
+    <a class="article-back" href="/#insights">← Back to insights</a>
+    <article>
+      <header class="article-header">
+        <p class="article-meta">Artificial Intelligence · October 12, 2026 · 7 min read</p>
+        <h1>The Model Is Not the System: Harness Engineering for Reliable AI Agents</h1>
+        <p class="article-deck">An agent that survives a demo is useful. An agent that survives a crash, resumes correctly, and proves its work is engineering.</p>
+      </header>
+
+      <div class="article-body">
+<p>An AI coding agent edits a repository, runs a command, and announces success. Then its process dies before the result is checked. When the worker restarts, should it repeat the edit, trust the previous message, or inspect what actually happened?</p>
+<p>A larger context window does not answer that question. Neither does a more persuasive prompt. It is a systems problem: work has state, actions have consequences, and completion requires evidence.</p>
+<p><strong>Harness engineering</strong> is the work of building the runtime around a model: the machinery that selects context, executes tools, records progress, handles interruption, and checks results. For developers building agent products, that machinery deserves the same attention as model selection.</p>
+<h2>Why this belongs in the 2026 engineering conversation</h2>
+<p>Recent primary sources make the shift concrete. Anthropic’s <a href="https://www.anthropic.com/engineering/managed-agents">April 2026 architecture report</a> describes separating session storage, the harness, and execution sandboxes so components can fail independently. Its <a href="https://www.anthropic.com/engineering/harness-design-long-running-apps">March 2026 application-development report</a> describes explicit sprint contracts and an evaluator exercising applications.</p>
+<p>A <a href="https://arxiv.org/abs/2605.13357">May 2026 research preprint</a> similarly frames software-engineering capability as a property of the model, harness, and environment together. This is a proposed research framework, rather than an industry standard or proof that one architecture wins everywhere.</p>
+<p>My engineering interpretation is straightforward: as agents move from answering questions to changing systems, the unit of design becomes the complete execution path. The model proposes work; the surrounding software determines whether that work can be performed, recovered, and accepted.</p>
+<h2>A transcript is not a task database</h2>
+<p>Conversation history explains what an agent saw. Operational state explains what the application knows. Mixing them makes recovery fragile: a sentence saying “tests passed” is not equivalent to a stored result tied to the exact artifact under review.</p>
+<p>For a fictional documentation agent, record a task identifier, input revision, output location, current stage, and verification evidence. Keep the generated document separate from the status that says it is accepted. A worker restart should reload those records rather than reconstruct truth from conversational confidence.</p>
+<p>The same principle applies to coding: a check must identify the commit or artifact it examined. A passing test from yesterday cannot validate a file edited today. State should express that dependency explicitly.</p>
+<h2>Define transitions before adding more intelligence</h2>
+<p>A small lifecycle can distinguish pending work, generated output, verified output, and failure. These states answer different questions. Generated means an artifact exists. Verified means specified checks passed. Published means a separate delivery action was confirmed.</p>
+<p>Require evidence for each consequential transition. An agent may request publication, but application code should check the artifact revision and authorization first. Failed or interrupted work should remain visible as failed or interrupted; a fluent final message must not quietly promote it to completed.</p>
+<p>This extends the architecture choice in <a href="/insights/ai-agents-vs-workflows-right-level-autonomy.html">AI agents versus workflows</a>: whichever controls the next step, the surrounding system still owns task state.</p>
+<h2>A runnable checkpoint and recovery example</h2>
+<p>This Python 3 example uses SQLite and a synthetic model output. It demonstrates recovery after process interruption, with generated output committed before verification. It calls no LLM and performs no external action.</p>
+<pre style="overflow-x:auto; padding:20px; border:1px solid var(--line); border-radius:12px; background:var(--panel)"><code>import json
+import sqlite3
+import sys
+
+with sqlite3.connect(&quot;harness-demo.db&quot;) as db:
+    db.execute(&quot;&quot;&quot;CREATE TABLE IF NOT EXISTS jobs (
+        id TEXT PRIMARY KEY, stage TEXT NOT NULL,
+        artifact TEXT, evidence TEXT
+    )&quot;&quot;&quot;)
+    db.execute(&quot;INSERT OR IGNORE INTO jobs VALUES (?, ?, ?, ?)&quot;,
+               (&quot;demo-v1&quot;, &quot;pending&quot;, None, None))
+
+with sqlite3.connect(&quot;harness-demo.db&quot;) as db:
+    stage, artifact = db.execute(
+        &quot;SELECT stage, artifact FROM jobs WHERE id=?&quot;,
+        (&quot;demo-v1&quot;,)).fetchone()
+    if stage == &quot;pending&quot;:
+        # Synthetic stand-in for a model-produced artifact.
+        artifact = json.dumps({&quot;total&quot;: 6})
+        db.execute(&quot;UPDATE jobs SET stage=?, artifact=? WHERE id=?&quot;,
+                   (&quot;generated&quot;, artifact, &quot;demo-v1&quot;))
+
+# The artifact is committed before the simulated interruption.
+if &quot;--crash&quot; in sys.argv:
+    raise SystemExit(&quot;Interrupted before verification; rerun normally&quot;)
+
+with sqlite3.connect(&quot;harness-demo.db&quot;) as db:
+    stage, artifact = db.execute(
+        &quot;SELECT stage, artifact FROM jobs WHERE id=?&quot;,
+        (&quot;demo-v1&quot;,)).fetchone()
+    if stage == &quot;generated&quot;:
+        expected = sum([1, 2, 3])  # Independent fixture oracle.
+        passed = json.loads(artifact).get(&quot;total&quot;) == expected
+        evidence = json.dumps({&quot;check&quot;: &quot;fixture_sum&quot;, &quot;passed&quot;: passed})
+        db.execute(&quot;UPDATE jobs SET stage=?, evidence=? WHERE id=?&quot;,
+                   (&quot;done&quot; if passed else &quot;failed&quot;, evidence, &quot;demo-v1&quot;))
+    print(db.execute(&quot;SELECT stage, evidence FROM jobs WHERE id=?&quot;,
+                     (&quot;demo-v1&quot;,)).fetchone())</code></pre>
+<p>Save it as <code>harness_demo.py</code> in an empty directory. Run <code>python3 harness_demo.py --crash</code>, then <code>python3 harness_demo.py</code>. The second invocation loads the saved artifact and prints a <code>done</code> record with passing evidence. Run it again: the completed task is read rather than generated again. Delete <code>harness-demo.db</code> to reset this disposable exercise.</p>
+<p>The verifier computes its expected value from a fixture instead of asking the simulated generator whether it is correct. The example’s transaction boundaries follow <a href="https://docs.python.org/3/library/sqlite3.html#how-to-use-the-connection-context-manager">Python’s SQLite connection semantics</a>: successful transaction blocks commit, while exceptions roll back pending changes.</p>
+<p>This is deliberately a single-worker demonstration of process recovery. It is not a distributed scheduler, a power-loss durability test, or an exactly-once guarantee for remote effects. Multiple workers require coordination; external writes require their own recovery contract.</p>
+<h2>The difficult boundary is outside your database</h2>
+<p>Suppose an agent publishes a report successfully, but the network drops before the service returns a response. Its local record may still say “generated.” Blindly repeating publication can create a duplicate.</p>
+<p>Use a stable operation identity supported by the destination, or reconcile the destination’s state before retrying. Keep uncertain outcomes distinct from known failures. A local transaction cannot atomically commit an unrelated remote service’s work. The underlying issue is the same one discussed in <a href="/insights/idempotency-real-time-charging-prevent-duplicate-debits.html">idempotency and duplicate effects</a>.</p>
+<p>Sandbox isolation matters for a different reason. Generated code should run with only the capabilities it needs. Keep durable control records and privileged credentials behind interfaces the execution environment cannot casually overwrite or read. Anthropic’s managed-agent report provides one concrete example of separating these concerns; the appropriate implementation depends on your deployment.</p>
+<h2>Measure recovery, not just the happy path</h2>
+<p>Build an evaluation set around interruptions and observable outcomes. Terminate a worker after generation. Return a timeout after a simulated remote success. Feed the verifier a wrong artifact. Change the input revision after a previous check passed. Exhaust the tool budget before completion.</p>
+<p>For each case, specify what must remain true: no duplicate external effect, no stale acceptance, no lost artifact, and an honest final status. Record the action trace as well as the final answer. <a href="https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents">Anthropic’s agent-evaluation guidance</a> distinguishes task outcomes from execution traces and explains why both matter.</p>
+<p>Track verified completion rate, recovery success, duplicate-effect rate, elapsed time, and cost per accepted task. Compare changes using the same cases and repeat stochastic runs. Improvements in one metric can hide regressions in another.</p>
+<h2>Build the smallest runtime you can explain</h2>
+<p>Begin with one worker, explicit stages, stored artifacts, and an independent check. Add queues, leases, richer memory, or additional agents only when a measured failure requires them. Revisit model-specific workarounds after model upgrades; the March and April reports both illustrate assumptions becoming unnecessary as model behavior changes.</p>
+<p>The commercial value is a system whose behavior remains inspectable after the demo ends: you can explain what happened, recover unfinished work, and connect acceptance to evidence. A capable model makes ambitious work possible. A well-designed harness makes its execution accountable.</p>
+<p class="article-meta">Primary sources checked October 12, 2026. The example uses synthetic data and illustrates application design; it reports no personal production results.</p>
+<footer class="article-footer">Written by <strong>Yalçın Yakar</strong> — exploring software engineering across development, DevOps, QA and complex systems.</footer>
+      </div>
+    </article>
+  </main>
+
+  <footer><span>© 2026 Yalçın Yakar</span><span>Software Engineering · DevOps · QA</span></footer>
+</body>
+</html>
