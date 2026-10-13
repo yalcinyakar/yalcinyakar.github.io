@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RAG Evaluation: Measure Retrieval Before Blaming the LLM | Yalçın Yakar</title>
+  <meta name="description" content="Evaluate RAG systems by separating retrieval from generation. Learn Precision@K, Recall@K, MRR, groundedness, and a practical regression workflow.">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="theme-color" content="#080a09">
+  <link rel="canonical" href="https://yalcinyakar.github.io/insights/rag-evaluation-measure-retrieval-before-llm.html">
+  <link rel="stylesheet" href="/styles.css">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="RAG Evaluation: Measure Retrieval Before Blaming the LLM">
+  <meta property="og:description" content="A practical method for diagnosing retrieval and generation separately, with runnable Precision@K, Recall@K, and MRR checks.">
+  <meta property="og:url" content="https://yalcinyakar.github.io/insights/rag-evaluation-measure-retrieval-before-llm.html">
+  <meta property="og:image" content="https://yalcinyakar.github.io/assets/yalcin-yakar-it-engineer.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://yalcinyakar.github.io/assets/yalcin-yakar-it-engineer.jpg">
+  <script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "RAG Evaluation: Measure Retrieval Before Blaming the LLM",
+  "description": "Evaluate RAG systems by separating retrieval from generation. Learn Precision@K, Recall@K, MRR, groundedness, and a practical regression workflow.",
+  "datePublished": "2026-10-13",
+  "dateModified": "2026-10-13",
+  "mainEntityOfPage": "https://yalcinyakar.github.io/insights/rag-evaluation-measure-retrieval-before-llm.html",
+  "image": "https://yalcinyakar.github.io/assets/yalcin-yakar-it-engineer.jpg",
+  "author": {
+    "@type": "Person",
+    "name": "Yalçın Yakar",
+    "url": "https://yalcinyakar.github.io/"
+  }
+}</script>
+</head>
+<body>
+  <div class="noise" aria-hidden="true"></div>
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="Yalçın Yakar home"><span>YY</span><b>Yalçın Yakar</b></a>
+    <nav aria-label="Article navigation"><a href="/#about">About</a><a href="/#stack">Stack</a><a href="/#insights">Insights</a></nav>
+    <a class="nav-cta" href="https://www.linkedin.com/in/yalcinyakar" target="_blank" rel="me noopener">Connect <span aria-hidden="true">↗</span></a>
+  </header>
+
+  <main class="article-shell">
+    <a class="article-back" href="/#insights">← Back to insights</a>
+    <article>
+      <header class="article-header">
+        <p class="article-meta">Artificial Intelligence · October 13, 2026 · 6 min read</p>
+        <h1>RAG Evaluation: Measure Retrieval Before Blaming the LLM</h1>
+        <p class="article-deck">A useful RAG scorecard separates what the system found from what the model wrote. Otherwise, every failure looks like a model failure.</p>
+      </header>
+
+      <div class="article-body">
+<p>A retrieval-augmented generation system gives an incorrect answer. The instinctive response is often to change the prompt or replace the language model. But the model may never have received the evidence required to answer correctly.</p>
+<p>RAG contains at least two systems with different failure modes: a retriever selects context, then a generator produces an answer from it. Evaluating only the final response hides this boundary. A reliable evaluation process measures retrieval first, generation second, and the complete experience last.</p>
+
+<h2>Start with a test set, not a favorite demo</h2>
+<p>Build a small evaluation set from realistic information needs. Each case should contain the query, the documents or chunks considered relevant, and the expected answer behavior. Include straightforward questions, paraphrases, ambiguous requests, multi-document questions, and queries that should not be answered.</p>
+<p>Negative cases matter because a system must recognize when its corpus lacks sufficient evidence. Microsoft’s <a href="https://learn.microsoft.com/azure/architecture/ai-ml/guide/rag/rag-information-retrieval">RAG retrieval guidance</a> recommends both positive examples, where relevant chunks should rank highly, and negative examples, where retrieval scores should remain low. Add access-control cases as well: a technically relevant document is still wrong context when the requester is not allowed to see it.</p>
+<p>Keep the test set versioned beside the configuration that produced the result. Record the chunking strategy, embedding model, index version, filters, reranker, prompt, and generation model. Without that lineage, a score change is difficult to explain.</p>
+
+<h2>Measure whether retrieval supplied usable evidence</h2>
+<p>Three ranking metrics provide a practical starting point:</p>
+<ul>
+  <li><strong>Precision@K</strong> asks what fraction of the first K retrieved items are relevant. Low precision means the context window is being filled with noise.</li>
+  <li><strong>Recall@K</strong> asks what fraction of all known relevant items appears in the first K results. Low recall means important evidence is missing.</li>
+  <li><strong>Mean Reciprocal Rank</strong> rewards placing the first relevant item near the top. It is useful when one strong result is sufficient for a query.</li>
+</ul>
+<p>These metrics answer different questions. Increasing K can improve recall while reducing precision and consuming more context. A reranker may improve early ordering without recovering a document that the first-stage search never found. Report several metrics rather than collapsing retrieval quality into one number.</p>
+
+<h2>A runnable retrieval check</h2>
+<p>The following Python 3 example is deliberately provider-independent. It evaluates one synthetic query using document identifiers, so it can be run locally without an API key or external package.</p>
+<pre style="overflow-x:auto; padding:20px; border:1px solid var(--line); border-radius:12px; background:var(--panel)"><code>from math import isclose
+
+def precision_at_k(retrieved, relevant, k):
+    top = retrieved[:k]
+    return sum(doc in relevant for doc in top) / k
+
+def recall_at_k(retrieved, relevant, k):
+    if not relevant:
+        return 1.0 if not retrieved[:k] else 0.0
+    hits = sum(doc in relevant for doc in retrieved[:k])
+    return hits / len(relevant)
+
+def reciprocal_rank(retrieved, relevant):
+    for rank, doc in enumerate(retrieved, start=1):
+        if doc in relevant:
+            return 1 / rank
+    return 0.0
+
+retrieved = [&quot;doc-b&quot;, &quot;doc-a&quot;, &quot;doc-x&quot;]
+relevant = {&quot;doc-a&quot;, &quot;doc-c&quot;}
+
+assert isclose(precision_at_k(retrieved, relevant, 3), 1 / 3)
+assert isclose(recall_at_k(retrieved, relevant, 3), 1 / 2)
+assert isclose(reciprocal_rank(retrieved, relevant), 1 / 2)
+print(&quot;Retrieval checks passed&quot;)</code></pre>
+<p>Save it as <code>retrieval_eval.py</code> and run <code>python3 retrieval_eval.py</code>. The first relevant item is second, only one of the top three results is relevant, and one of two relevant documents was recovered. To evaluate a suite, calculate each metric per query and average it across a fixed dataset. Preserve the per-case results: averages alone can hide a broken query category.</p>
+
+<h2>Evaluate generation with the retrieved context fixed</h2>
+<p>Once retrieval is acceptable, test the generator using a frozen set of contexts. This prevents index changes from confusing the diagnosis. Check whether claims are supported by the supplied context, whether the answer covers the necessary facts, whether citations point to the evidence they claim to support, and whether the model abstains when evidence is insufficient.</p>
+<p>Microsoft’s <a href="https://learn.microsoft.com/en-us/azure/foundry/concepts/evaluation-evaluators/rag-evaluators">RAG evaluator documentation</a> makes the same architectural distinction: retrieval and document processing are evaluated separately from system-level properties such as groundedness and response completeness. Ragas also documents <a href="https://docs.ragas.io/en/stable/concepts/metrics/available_metrics/context_precision/">context precision</a> as a way to assess whether relevant chunks are ranked ahead of irrelevant ones.</p>
+<p>Automated scoring helps with regression testing, but it should not be the only judge. Sample failures for human review, especially in high-impact or specialized domains. Exact wording is not the goal; support, completeness, and safe behavior are.</p>
+
+<h2>Turn failures into engineering actions</h2>
+<p>A separated scorecard shortens the path from symptom to fix:</p>
+<ul>
+  <li>Low recall suggests inspecting parsing, chunk boundaries, query rewriting, indexing, metadata filters, or hybrid search.</li>
+  <li>Low precision with adequate recall suggests tuning ranking, reranking, filters, or the number of chunks passed forward.</li>
+  <li>Strong retrieval with unsupported claims points toward prompt design, context handling, or generation behavior.</li>
+  <li>Answers to negative cases expose an abstention or policy failure, even when the prose sounds convincing.</li>
+</ul>
+<p>Run the suite whenever documents, parsers, embeddings, ranking logic, prompts, or models change. Treat it like the quality gate described in <a href="/insights/flaky-tests-ci-root-cause-strategy.html">reliable CI testing</a>: a regression check is useful only when its failures are reproducible and visible. Feed the results into the shared engineering loop discussed in <a href="/insights/development-devops-quality-one-feedback-loop.html">development, DevOps, and QA feedback</a>.</p>
+
+<h2>Evaluate the pipeline, not the brand name</h2>
+<p>RAG quality is not a property of the language model alone. It emerges from document preparation, retrieval, ranking, context assembly, generation, and policy decisions. Changing the model can improve fluency while leaving missing evidence untouched.</p>
+<p>The practical rule is simple: first prove that the right information reached the model. Then prove that the model used it faithfully. Finally, test the system end to end with realistic and no-answer cases. That decomposition turns “the AI gave a bad answer” into a diagnosis an engineering team can act on.</p>
+<p class="article-meta">Primary sources checked October 13, 2026. The example uses synthetic identifiers and reports no production results.</p>
+<footer class="article-footer">Written by <strong>Yalçın Yakar</strong> — exploring software engineering across development, DevOps, QA and complex systems.</footer>
+      </div>
+    </article>
+  </main>
+
+  <footer><span>© 2026 Yalçın Yakar</span><span>Software Engineering · DevOps · QA · AI</span></footer>
+</body>
+</html>
