@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI-Generated Tests: Verify the Oracle, Not Just the Coverage | Yalçın Yakar</title>
+  <meta name="description" content="Make AI-generated tests useful with independent test oracles, boundary cases, deliberate faults and CI checks. Includes a runnable Python example.">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="theme-color" content="#080a09">
+  <link rel="canonical" href="https://yalcinyakar.github.io/insights/ai-generated-tests-independent-oracles.html">
+  <link rel="stylesheet" href="/styles.css">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="AI-Generated Tests: Verify the Oracle, Not Just the Coverage">
+  <meta property="og:description" content="A passing test can preserve a bug. Build stronger AI-assisted QA with independent expectations and deliberate fault checks.">
+  <meta property="og:url" content="https://yalcinyakar.github.io/insights/ai-generated-tests-independent-oracles.html">
+  <meta property="og:image" content="https://yalcinyakar.github.io/assets/yalcin-yakar-it-engineer.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://yalcinyakar.github.io/assets/yalcin-yakar-it-engineer.jpg">
+  <script type="application/ld+json">{
+    "@context": "https://schema.org", "@type": "BlogPosting",
+    "headline": "AI-Generated Tests: Verify the Oracle, Not Just the Coverage",
+    "description": "Make AI-generated tests useful with independent test oracles, boundary cases, deliberate faults and CI checks. Includes a runnable Python example.",
+    "datePublished": "2026-10-16", "dateModified": "2026-10-16",
+    "mainEntityOfPage": "https://yalcinyakar.github.io/insights/ai-generated-tests-independent-oracles.html",
+    "image": "https://yalcinyakar.github.io/assets/yalcin-yakar-it-engineer.jpg",
+    "author": {"@type": "Person", "name": "Yalçın Yakar", "url": "https://yalcinyakar.github.io/"}
+  }</script>
+</head>
+<body>
+  <div class="noise" aria-hidden="true"></div>
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="Yalçın Yakar home"><span>YY</span><b>Yalçın Yakar</b></a>
+    <nav aria-label="Article navigation"><a href="/#about">About</a><a href="/#stack">Stack</a><a href="/#insights">Insights</a></nav>
+    <a class="nav-cta" href="https://www.linkedin.com/in/yalcinyakar" target="_blank" rel="me noopener">Connect <span aria-hidden="true">↗</span></a>
+  </header>
+  <main class="article-shell">
+    <a class="article-back" href="/#insights">← Back to insights</a>
+    <article>
+      <header class="article-header">
+        <p class="article-meta">AI-Assisted QA · October 16, 2026 · 6 min read</p>
+        <h1>AI-Generated Tests: Verify the Oracle, Not Just the Coverage</h1>
+        <p class="article-deck">A green test suite is only useful when its expectations are right. Ask AI to propose cases, then prove those cases can detect a meaningful fault.</p>
+      </header>
+      <div class="article-body">
+<p>An AI assistant reads a function, generates ten tests, and reports that everything passes. The result looks productive. Yet the tests may simply reproduce the function's assumptions, including its defects. More executable assertions do not automatically mean stronger evidence.</p>
+<p>The missing question is about the test oracle: how does the test know the correct outcome? In AI-assisted QA, that question deserves attention before test count, coverage percentage, or the fluency of the generated explanation.</p>
+
+<h2>Separate the requirement from the implementation</h2>
+<p>Start with an explicit behavioral contract. For a fictional shipping calculator, suppose the subtotal is expressed in integer cents. Subtotals below 5,000 incur a 499-cent fee; subtotals at or above 5,000 ship free. Negative values and non-integers are invalid. These are invented rules for a reproducible exercise, not a description of any commercial system.</p>
+<p>Give the assistant that contract and ask it to propose a decision table before writing code. Require a reason for every case. The important examples are zero, one cent below the threshold, the threshold itself, one cent above it, and invalid input.</p>
+<p>Review that table independently. If the requirement is ambiguous, preserve the ambiguity as an open design decision rather than letting generated code silently settle it. A model cannot turn an unspecified business policy into an authoritative expectation.</p>
+
+<h2>A runnable boundary test with a deliberate fault</h2>
+<p>This Python 3 script uses only the standard library. Save it as <code>shipping_checks.py</code>. The expected values come directly from the stated contract, not from calling the implementation a second time.</p>
+<pre style="overflow-x:auto; padding:20px; border:1px solid var(--line); border-radius:12px; background:var(--panel)"><code>import sys
+import unittest
+
+MUTANT = "--mutant" in sys.argv
+
+def shipping_fee(subtotal):
+    if type(subtotal) is not int or subtotal &lt; 0:
+        raise ValueError("subtotal must be nonnegative integer cents")
+    free = subtotal &gt; 5000 if MUTANT else subtotal &gt;= 5000
+    return 0 if free else 499
+
+class ShippingContract(unittest.TestCase):
+    def test_thresholds(self):
+        cases = [(0, 499), (4999, 499), (5000, 0), (5001, 0)]
+        for subtotal, expected in cases:
+            with self.subTest(subtotal=subtotal):
+                self.assertEqual(shipping_fee(subtotal), expected)
+
+    def test_invalid_inputs(self):
+        for subtotal in (-1, 50.0, "5000", None, True):
+            with self.subTest(subtotal=subtotal):
+                with self.assertRaises(ValueError):
+                    shipping_fee(subtotal)
+
+if __name__ == "__main__":
+    unittest.main(argv=[sys.argv[0]], verbosity=2)</code></pre>
+<p>Run <code>python3 shipping_checks.py</code>: both test methods should pass. Then run <code>python3 shipping_checks.py --mutant</code>: the threshold subtest should fail because 5,000 now incorrectly attracts a shipping fee. The second command should return a nonzero exit status.</p>
+<p>The <a href="https://docs.python.org/3/library/unittest.html">official unittest documentation</a> describes the assertions and subtests used here. Subtests keep the individual input visible while checking several cases in one method. Explicitly rejecting booleans avoids Python's otherwise legitimate treatment of <code>bool</code> as an integer subtype.</p>
+<p>This is one hand-selected mutation, not a complete mutation-testing framework. Detecting it proves sensitivity to this particular boundary fault; it does not prove the program correct. Removing the 5,000 case demonstrates the limitation: all remaining checks can pass even with the mutant enabled.</p>
+
+<h2>Use AI to expand hypotheses, not define truth</h2>
+<p>A useful prompt asks for missing equivalence classes, boundary conditions, and plausible defects. For example: “Using this contract, propose cases that distinguish greater-than from greater-than-or-equal. Explain each expected result. Do not change the implementation or existing assertions.”</p>
+<p>Then inspect what was generated. Reject tests that calculate the expected result using the same branch logic as the implementation. Avoid broad exception catches that make unexpected failures look successful. Review mocks carefully: replacing the behavior being tested with a canned response can leave only the mock under examination.</p>
+<p>For larger input spaces, ask for invariants as additional hypotheses. Under this contract, every valid subtotal has a fee of either zero or 499. That invariant is useful but insufficient: an implementation returning zero for every input still satisfies it. Combine properties with explicit examples rather than treating either as universal proof.</p>
+
+<h2>Protect the tests as part of the review boundary</h2>
+<p>Review generated test changes separately from implementation changes. An assistant asked to make a build pass might propose weakening an assertion, skipping a difficult case, or adjusting a fixture to match faulty behavior. Those edits need a requirement-based explanation.</p>
+<p><a href="https://cheatsheetseries.owasp.org/cheatsheets/Secure_Coding_with_AI_Cheat_Sheet.html">OWASP's Secure Coding with AI guidance</a> recommends human review of AI-generated test modifications and warns against treating passing tests as sufficient security evidence. Apply that principle especially to authorization, validation, and error-handling cases. Use synthetic fixtures, and execute generated tests without production credentials or unrestricted network access.</p>
+
+<h2>Make the evidence useful in CI</h2>
+<p>Commit the reviewed tests and contract together. Run deterministic checks on every relevant change, retain failure output, and keep deliberate-fault experiments in an isolated job or disposable branch. Do not merge the mutant into the shipping implementation.</p>
+<p>Record which requirement each regression protects and which plausible fault it detects. Track escaped defects and review effort alongside execution coverage. As discussed in <a href="/insights/flaky-tests-ci-root-cause-strategy.html">restoring trust in CI tests</a>, a noisy signal becomes easy to ignore. Keep time, randomness, external dependencies, and shared state controlled.</p>
+<p>The same separation of evidence and output underpins <a href="/insights/rag-evaluation-measure-retrieval-before-llm.html">RAG evaluation</a> and <a href="/insights/harness-engineering-reliable-ai-agents.html">verification in agent harnesses</a>. Generated work is a candidate artifact. Acceptance requires an independent check.</p>
+<p>AI can help propose test ideas and draft repetitive scaffolding. The engineering responsibility remains concrete: define the contract, verify the oracle, demonstrate that meaningful faults are caught, and keep the review trail. A smaller suite that detects the wrong behavior is more informative than a larger suite that merely agrees with it.</p>
+<p class="article-meta">Primary sources checked October 16, 2026. This synthetic example calls no AI service and reports no personal production results.</p>
+<footer class="article-footer">Written by <strong>Yalçın Yakar</strong> — exploring software engineering across development, DevOps, QA and complex systems.</footer>
+      </div>
+    </article>
+  </main>
+  <footer><span>© 2026 Yalçın Yakar</span><span>Software Engineering · DevOps · QA · AI</span></footer>
+</body>
+</html>
