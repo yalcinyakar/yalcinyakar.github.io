@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Responsible AI Integration: Human Approval That Actually Controls Actions | Yalçın Yakar</title>
+  <meta name="description" content="Design human approval gates for AI actions with risk tiers, least privilege, action-bound authorization and auditable outcomes. Includes runnable Python.">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="theme-color" content="#080a09">
+  <link rel="canonical" href="https://yalcinyakar.github.io/insights/responsible-ai-human-approval-gates.html">
+  <link rel="stylesheet" href="/styles.css">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Responsible AI Integration: Human Approval That Actually Controls Actions">
+  <meta property="og:description" content="A practical design for risk-based AI approval gates that bind authorization to the exact proposed action.">
+  <meta property="og:url" content="https://yalcinyakar.github.io/insights/responsible-ai-human-approval-gates.html">
+  <meta property="og:image" content="https://yalcinyakar.github.io/assets/yalcin-yakar-it-engineer.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://yalcinyakar.github.io/assets/yalcin-yakar-it-engineer.jpg">
+  <script type="application/ld+json">{
+    "@context": "https://schema.org", "@type": "BlogPosting",
+    "headline": "Responsible AI Integration: Human Approval That Actually Controls Actions",
+    "description": "Design human approval gates for AI actions with risk tiers, least privilege, action-bound authorization and auditable outcomes. Includes runnable Python.",
+    "datePublished": "2026-10-23", "dateModified": "2026-10-23",
+    "mainEntityOfPage": "https://yalcinyakar.github.io/insights/responsible-ai-human-approval-gates.html",
+    "image": "https://yalcinyakar.github.io/assets/yalcin-yakar-it-engineer.jpg",
+    "author": {"@type": "Person", "name": "Yalçın Yakar", "url": "https://yalcinyakar.github.io/"}
+  }</script>
+</head>
+<body>
+  <div class="noise" aria-hidden="true"></div>
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="Yalçın Yakar home"><span>YY</span><b>Yalçın Yakar</b></a>
+    <nav aria-label="Article navigation"><a href="/#about">About</a><a href="/#stack">Stack</a><a href="/#insights">Insights</a></nav>
+    <a class="nav-cta" href="https://www.linkedin.com/in/yalcinyakar" target="_blank" rel="me noopener">Connect <span aria-hidden="true">↗</span></a>
+  </header>
+  <main class="article-shell">
+    <a class="article-back" href="/#insights">← Back to insights</a>
+    <article>
+      <header class="article-header">
+        <p class="article-meta">Responsible AI · October 23, 2026 · 6 min read</p>
+        <h1>Responsible AI Integration: Human Approval That Actually Controls Actions</h1>
+        <p class="article-deck">“A human is in the loop” is not an architecture. Effective approval must show the real action, bind authorization to it, and fail closed when anything changes.</p>
+      </header>
+      <div class="article-body">
+<p>An AI assistant drafts a public announcement. A reviewer approves it. Before publication, the destination changes from an internal test page to a public account. If the system still treats the earlier click as permission, the human approval was decorative.</p>
+<p>Responsible AI integration requires more than adding a confirmation dialog. The application must decide which actions need approval, present enough information for a meaningful decision, and ensure that authorization applies only to the exact action reviewed.</p>
+
+<h2>Begin with consequences, not model confidence</h2>
+<p>A confidence score does not describe business impact. A highly confident model can propose a damaging action, while a low-confidence summary may be harmless because it changes nothing. Classify actions by consequence and reversibility instead.</p>
+<p>A practical starting point is three tiers. Read-only analysis and private drafts can often proceed automatically inside defined limits. Reversible internal changes may require stronger validation, logging, or sampled review. External publication, deletion, financial changes, permission changes, or messages sent on someone’s behalf should require explicit authorization appropriate to the context.</p>
+<p>This policy belongs in deterministic application code, not inside a prompt. The model may propose an action and explain its reasoning, but it should not decide whether its own proposal is exempt from oversight.</p>
+
+<h2>Make approval specific and informed</h2>
+<p>The reviewer needs the destination, operation, material content, expected effect, and relevant differences from the previous version. “Approve?” without this context encourages reflexive clicking. For destructive or broad actions, show scope clearly and make rejection easy.</p>
+<p>Approval must also have a defined owner. NIST’s <a href="https://airc.nist.gov/airmf-resources/airmf/5-sec-core/">AI Risk Management Framework Core</a> includes policies and procedures that differentiate roles and responsibilities for human-AI configurations and oversight. That does not prescribe one universal workflow; it supports making accountability explicit for the use case.</p>
+<p>Separate proposal creation from approval. If the same automated component can generate a request and manufacture the evidence of authorization, the boundary provides little control. The execution service should verify trusted application state rather than a field supplied by the model.</p>
+
+<h2>A runnable action-bound approval example</h2>
+<p>This Python 3 example demonstrates a narrow pattern using only the standard library. A synthetic approval service signs the digest of one proposal, the approver, and an expiry time. The executor verifies all three before accepting a high-impact action. It performs no network call or external write.</p>
+<pre style="overflow-x:auto; padding:20px; border:1px solid var(--line); border-radius:12px; background:var(--panel)"><code>import hashlib
+import hmac
+import json
+
+DEMO_KEY = b&quot;local-demo-key-not-for-production&quot;
+
+def canonical(value):
+    return json.dumps(value, sort_keys=True, separators=(&quot;,&quot;, &quot;:&quot;))
+
+def proposal_digest(proposal):
+    return hashlib.sha256(canonical(proposal).encode()).hexdigest()
+
+def issue_approval(proposal, approver, expires_at):
+    claim = {
+        &quot;proposal_digest&quot;: proposal_digest(proposal),
+        &quot;approver&quot;: approver,
+        &quot;expires_at&quot;: expires_at,
+    }
+    body = canonical(claim)
+    signature = hmac.new(DEMO_KEY, body.encode(), hashlib.sha256).hexdigest()
+    return {&quot;claim&quot;: claim, &quot;signature&quot;: signature}
+
+def verify_approval(proposal, token, now):
+    claim = token.get(&quot;claim&quot;, {})
+    supplied = token.get(&quot;signature&quot;, &quot;&quot;)
+    expected = hmac.new(
+        DEMO_KEY, canonical(claim).encode(), hashlib.sha256
+    ).hexdigest()
+    if not hmac.compare_digest(supplied, expected):
+        raise ValueError(&quot;invalid approval signature&quot;)
+    if claim.get(&quot;proposal_digest&quot;) != proposal_digest(proposal):
+        raise ValueError(&quot;approval does not match action&quot;)
+    if not claim.get(&quot;approver&quot;) or now &gt; claim.get(&quot;expires_at&quot;, -1):
+        raise ValueError(&quot;missing or expired approval&quot;)
+    return True
+
+proposal = {&quot;action&quot;: &quot;publish&quot;, &quot;target&quot;: &quot;preview-page&quot;,
+            &quot;content_version&quot;: &quot;draft-7&quot;}
+token = issue_approval(proposal, &quot;reviewer-42&quot;, expires_at=110)
+assert verify_approval(proposal, token, now=100)
+
+changed = {**proposal, &quot;target&quot;: &quot;public-page&quot;}
+for candidate, now in [(changed, 100), (proposal, 111)]:
+    try:
+        verify_approval(candidate, token, now)
+        raise AssertionError(&quot;unsafe action was accepted&quot;)
+    except ValueError:
+        pass
+print(&quot;Exact action accepted; changed and expired actions rejected&quot;)</code></pre>
+<p>Save it as <code>approval_gate.py</code> and run <code>python3 approval_gate.py</code>. The original proposal passes. Changing only the target invalidates the approval because the digest changes; using the original proposal after expiry also fails.</p>
+<p>This is an educational integrity check, not a production identity system. The key is deliberately embedded, approver identity is synthetic, and there is no secure key storage, revocation, replay ledger, authentication, or authorization service. A real design should use established identity and authorization infrastructure, protect signing material, apply one-time or idempotent operation semantics where needed, and record the result of execution.</p>
+
+<h2>Least privilege remains necessary</h2>
+<p>Human approval does not justify broad tool access. Give the execution path only the permissions required for the approved operation and constrain targets server-side. A publish action should not secretly inherit deletion privileges. The model should not receive credentials it does not need.</p>
+<p>OWASP’s <a href="https://genai.owasp.org/llmrisk/llm062025-excessive-agency/">Excessive Agency guidance</a> recommends minimizing extensions, permissions, and autonomy, and using human approval for high-impact actions. These controls reinforce each other: limited capability reduces the damage possible if a prompt, model, integration, or reviewer fails.</p>
+<p>Validate model output before it reaches the approval screen, as described in <a href="/insights/llm-output-validation-beyond-json.html">LLM output validation</a>. After approval, revalidate trusted inputs at execution time. Never treat explanatory text such as “the user approved this” as authorization.</p>
+
+<h2>Test the boundary, not only the happy path</h2>
+<p>Regression tests should alter the destination, operation, content version, approver claim, signature, and expiry. They should replay a used token if the policy forbids reuse, submit an unsupported action, and simulate the action changing between display and execution. Verify that every mismatch fails closed and produces an auditable reason without leaking sensitive content.</p>
+<p>Measure how often reviewers approve, reject, or abandon requests, and sample whether the interface provided enough information. High approval rates do not automatically prove good oversight; they may indicate that the gate is well targeted, or that reviewers have learned to click through it. The NIST AI RMF Playbook recommends measuring and documenting human oversight rather than merely asserting that it exists.</p>
+<p>This extends the execution discipline in <a href="/insights/harness-engineering-reliable-ai-agents.html">reliable AI agent harnesses</a>: durable state and verification make the control inspectable after the action. Keep the proposal, policy decision, approval identity, exact action digest, execution result, and relevant timestamps linked in the audit record.</p>
+<p>Responsible integration is not about forcing a person to approve every model output. It is about placing meaningful authority at the right boundary. Low-impact work can remain fast; high-impact actions receive specific review, narrow permissions, and technical enforcement that survives changes between proposal and execution.</p>
+<p class="article-meta">Primary sources checked October 23, 2026. The example is synthetic and reports no personal production results.</p>
+<footer class="article-footer">Written by <strong>Yalçın Yakar</strong> — exploring software engineering across development, DevOps, QA and complex systems.</footer>
+      </div>
+    </article>
+  </main>
+  <footer><span>© 2026 Yalçın Yakar</span><span>Software Engineering · DevOps · QA · AI</span></footer>
+</body>
+</html>
