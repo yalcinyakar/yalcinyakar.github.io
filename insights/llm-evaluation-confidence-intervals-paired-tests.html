@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LLM Evaluation: Report Uncertainty, Not Just a Win Rate | Yalçın Yakar</title>
+  <meta name="description" content="Compare LLM versions with paired test cases, bootstrap confidence intervals and failure slices instead of relying on one headline score.">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="theme-color" content="#080a09">
+  <link rel="canonical" href="https://yalcinyakar.github.io/insights/llm-evaluation-confidence-intervals-paired-tests.html">
+  <link rel="stylesheet" href="/styles.css">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="LLM Evaluation: Report Uncertainty, Not Just a Win Rate">
+  <meta property="og:description" content="A practical evaluation workflow using paired cases, bootstrap intervals and failure slices—with runnable Python.">
+  <meta property="og:url" content="https://yalcinyakar.github.io/insights/llm-evaluation-confidence-intervals-paired-tests.html">
+  <meta property="og:image" content="https://yalcinyakar.github.io/assets/yalcin-yakar-it-engineer.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://yalcinyakar.github.io/assets/yalcin-yakar-it-engineer.jpg">
+  <script type="application/ld+json">{
+    "@context": "https://schema.org", "@type": "BlogPosting",
+    "headline": "LLM Evaluation: Report Uncertainty, Not Just a Win Rate",
+    "description": "Compare LLM versions with paired test cases, bootstrap confidence intervals and failure slices instead of relying on one headline score.",
+    "datePublished": "2026-10-27", "dateModified": "2026-10-27",
+    "mainEntityOfPage": "https://yalcinyakar.github.io/insights/llm-evaluation-confidence-intervals-paired-tests.html",
+    "image": "https://yalcinyakar.github.io/assets/yalcin-yakar-it-engineer.jpg",
+    "author": {"@type": "Person", "name": "Yalçın Yakar", "url": "https://yalcinyakar.github.io/"}
+  }</script>
+</head>
+<body>
+  <div class="noise" aria-hidden="true"></div>
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="Yalçın Yakar home"><span>YY</span><b>Yalçın Yakar</b></a>
+    <nav aria-label="Article navigation"><a href="/#about">About</a><a href="/#stack">Stack</a><a href="/#insights">Insights</a></nav>
+    <a class="nav-cta" href="https://www.linkedin.com/in/yalcinyakar" target="_blank" rel="me noopener">Connect <span aria-hidden="true">↗</span></a>
+  </header>
+  <main class="article-shell">
+    <a class="article-back" href="/#insights">← Back to insights</a>
+    <article>
+      <header class="article-header">
+        <p class="article-meta">LLM Evaluation · October 27, 2026 · 6 min read</p>
+        <h1>LLM Evaluation: Report Uncertainty, Not Just a Win Rate</h1>
+        <p class="article-deck">A candidate model scoring 82% against a baseline’s 78% sounds better. Without paired cases, uncertainty and failure slices, that difference may tell you very little.</p>
+      </header>
+      <div class="article-body">
+<p>Teams often reduce an LLM evaluation to one number: accuracy, pass rate, average grader score, or preference win rate. That number is easy to compare and easy to overinterpret.</p>
+<p>A useful evaluation should answer three questions. Did the candidate improve on the same cases? How uncertain is the observed difference? Which important behaviors improved or regressed? A headline score alone answers none of them reliably.</p>
+
+<h2>Define the decision before collecting scores</h2>
+<p>Begin with the product behavior and release rule. A support summarizer might require factual completeness, correct abstention when evidence is missing, and no disclosure of restricted fields. A coding assistant might require tests to pass while preserving the requested interface. Each criterion needs an observable grader and a threshold tied to the deployment context.</p>
+<p>NIST’s <a href="https://airc.nist.gov/airmf-resources/airmf/5-sec-core/">AI Risk Management Framework Core</a> calls for rigorous testing and performance assessment with measures of uncertainty, benchmark comparisons, and documented results. Its trustworthiness guidance also says accuracy measurements should be paired with realistic test sets and test-method details. The practical implication is simple: define what the score represents and where the cases came from.</p>
+<p>Create a versioned set of representative cases before tuning against it. Include ordinary traffic, boundary cases, known failures, adversarial inputs where appropriate, and examples that should be rejected or escalated. Keep a separate holdout set when repeated prompt or model changes risk overfitting the visible evaluation.</p>
+
+<h2>Prefer paired comparisons</h2>
+<p>Run the baseline and candidate on the same inputs under controlled settings. Pairing makes each case its own comparison: a difficult example affects both systems rather than becoming an uncontrolled difference between two samples.</p>
+<p>For deterministic tasks, use executable checks where possible. For subjective properties, define a rubric and calibrate model or human graders against reviewed examples. Anthropic’s <a href="https://www.anthropic.com/research/demystifying-evals-for-ai-agents">evaluation guidance</a> recommends deterministic graders where possible, LLM graders where necessary, and human graders for appropriate validation. Combining grader types is often more informative than asking one grader to represent every quality dimension.</p>
+<p>Store case-level results, not only aggregates. You need the individual pairs to reproduce the comparison, inspect disagreements, and calculate uncertainty.</p>
+
+<h2>A runnable paired bootstrap</h2>
+<p>The following Python 3 example uses synthetic binary outcomes: <code>1</code> means the case passed its predefined grader and <code>0</code> means it failed. It estimates the candidate-minus-baseline pass-rate difference, then resamples the paired cases to produce a percentile bootstrap interval.</p>
+<pre style="overflow-x:auto; padding:20px; border:1px solid var(--line); border-radius:12px; background:var(--panel)"><code>import random
+
+# Synthetic results for the same 40 evaluation cases.
+baseline = [
+    1,1,1,0,1,0,1,1,0,1, 1,0,1,1,0,1,0,1,1,0,
+    1,1,0,1,0,1,1,0,1,1, 0,1,0,1,1,0,1,0,1,1,
+]
+candidate = [
+    1,1,1,1,1,0,1,1,0,1, 1,1,1,0,0,1,1,1,1,0,
+    1,1,1,1,0,1,1,0,1,1, 0,1,1,1,1,0,1,0,1,0,
+]
+
+def mean(values):
+    return sum(values) / len(values)
+
+def paired_delta(indices):
+    return mean([candidate[i] - baseline[i] for i in indices])
+
+observed = paired_delta(range(len(baseline)))
+rng = random.Random(27)
+samples = []
+for _ in range(20_000):
+    indices = [rng.randrange(len(baseline)) for _ in baseline]
+    samples.append(paired_delta(indices))
+samples.sort()
+
+low = samples[int(0.025 * len(samples))]
+high = samples[int(0.975 * len(samples))]
+print(f&quot;baseline={mean(baseline):.1%}&quot;)
+print(f&quot;candidate={mean(candidate):.1%}&quot;)
+print(f&quot;paired delta={observed:+.1%}&quot;)
+print(f&quot;95% bootstrap interval=[{low:+.1%}, {high:+.1%}]&quot;)
+assert low &lt;= observed &lt;= high</code></pre>
+<p>Save it as <code>paired_eval.py</code> and run <code>python3 paired_eval.py</code>. The fixed seed makes this demonstration reproducible. The candidate’s point estimate is higher, but the interval shows the range of differences compatible with this small synthetic sample under this resampling procedure.</p>
+<p>This percentile bootstrap is an educational starting point, not a universal significance test. It assumes the evaluation cases are reasonable resampling units. Repeated observations from the same user, document, conversation, or scenario may be dependent and should often be grouped before resampling. Small or unrepresentative datasets remain small or unrepresentative, however polished the interval looks.</p>
+
+<h2>Slice before declaring victory</h2>
+<p>An overall improvement can hide a critical regression. Tag cases by behavior, language, input length, risk level, tool use, and other relevant dimensions. Report both the number of examples and the score for each slice. A 100% rate on two examples is not strong evidence.</p>
+<p>Inspect every baseline-pass/candidate-fail pair. Those regressions often provide more actionable information than the average. For RAG systems, keep retrieval and generation measurements separate, as described in <a href="/insights/rag-evaluation-measure-retrieval-before-llm.html">evaluating retrieval before blaming the LLM</a>. For generated code, use <a href="/insights/ai-generated-tests-independent-oracles.html">independent test oracles</a> rather than model-written assertions that merely agree with the implementation.</p>
+<p>Track grader disagreement too. If humans or model graders frequently disagree on a category, the rubric may be ambiguous. Resolve unclear criteria before treating small score changes as product improvements.</p>
+
+<h2>Turn the report into a release rule</h2>
+<p>A practical decision can combine several conditions: no critical-case regression, a minimum acceptable score for every protected slice, and an uncertainty-aware bound on the overall difference. The threshold should reflect consequence, not statistical fashion. A low-impact drafting feature and an automated external action should not share the same tolerance.</p>
+<p>Version the dataset, rubric, grader, prompt, model, decoding settings, and code that calculates the result. Preserve failed outputs using privacy-appropriate controls. If the system can take actions, evaluate both the outcome and the execution trace, then apply the authorization boundary described in <a href="/insights/responsible-ai-human-approval-gates.html">human approval that actually controls actions</a>.</p>
+<p>The goal is not to manufacture certainty. It is to make the remaining uncertainty visible enough for an engineering decision. Report the point estimate, its interval, the sample size, protected slices, critical failures, and methodology together. One percentage belongs in a dashboard; evidence belongs in the release decision.</p>
+<p class="article-meta">Primary sources checked October 27, 2026. The dataset is synthetic and reports no personal production results.</p>
+<footer class="article-footer">Written by <strong>Yalçın Yakar</strong> — exploring software engineering across development, DevOps, QA and complex systems.</footer>
+      </div>
+    </article>
+  </main>
+  <footer><span>© 2026 Yalçın Yakar</span><span>Software Engineering · DevOps · QA · AI</span></footer>
+</body>
+</html>

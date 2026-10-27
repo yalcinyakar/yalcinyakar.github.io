@@ -4,7 +4,7 @@
   xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
   <url>
     <loc>https://yalcinyakar.github.io/</loc>
-    <lastmod>2026-10-23</lastmod>
+    <lastmod>2026-10-27</lastmod>
     <image:image>
       <image:loc>https://yalcinyakar.github.io/assets/yalcin-yakar-it-engineer.jpg</image:loc>
       <image:title>Yalçın Yakar, IT Engineer</image:title>
@@ -62,5 +62,9 @@
   <url>
     <loc>https://yalcinyakar.github.io/insights/responsible-ai-human-approval-gates.html</loc>
     <lastmod>2026-10-23</lastmod>
+  </url>
+  <url>
+    <loc>https://yalcinyakar.github.io/insights/llm-evaluation-confidence-intervals-paired-tests.html</loc>
+    <lastmod>2026-10-27</lastmod>
   </url>
 </urlset>
