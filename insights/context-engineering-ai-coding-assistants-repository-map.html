@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Context Engineering for AI Coding Assistants: Build a Repository Map, Not a Code Dump | Yalçın Yakar</title>
+  <meta name="description" content="Build focused repository context for AI coding assistants using task maps, scoped instructions, secret filtering and reproducible budget checks.">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="theme-color" content="#080a09">
+  <link rel="canonical" href="https://yalcinyakar.github.io/insights/context-engineering-ai-coding-assistants-repository-map.html">
+  <link rel="stylesheet" href="/styles.css">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Context Engineering for AI Coding Assistants: Build a Repository Map, Not a Code Dump">
+  <meta property="og:description" content="A practical method for selecting high-signal repository context without exposing secrets or flooding the model.">
+  <meta property="og:url" content="https://yalcinyakar.github.io/insights/context-engineering-ai-coding-assistants-repository-map.html">
+  <meta property="og:image" content="https://yalcinyakar.github.io/assets/yalcin-yakar-it-engineer.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://yalcinyakar.github.io/assets/yalcin-yakar-it-engineer.jpg">
+  <script type="application/ld+json">{
+    "@context": "https://schema.org", "@type": "BlogPosting",
+    "headline": "Context Engineering for AI Coding Assistants: Build a Repository Map, Not a Code Dump",
+    "description": "Build focused repository context for AI coding assistants using task maps, scoped instructions, secret filtering and reproducible budget checks.",
+    "datePublished": "2026-10-30", "dateModified": "2026-10-30",
+    "mainEntityOfPage": "https://yalcinyakar.github.io/insights/context-engineering-ai-coding-assistants-repository-map.html",
+    "image": "https://yalcinyakar.github.io/assets/yalcin-yakar-it-engineer.jpg",
+    "author": {"@type": "Person", "name": "Yalçın Yakar", "url": "https://yalcinyakar.github.io/"}
+  }</script>
+</head>
+<body>
+  <div class="noise" aria-hidden="true"></div>
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="Yalçın Yakar home"><span>YY</span><b>Yalçın Yakar</b></a>
+    <nav aria-label="Article navigation"><a href="/#about">About</a><a href="/#stack">Stack</a><a href="/#insights">Insights</a></nav>
+    <a class="nav-cta" href="https://www.linkedin.com/in/yalcinyakar" target="_blank" rel="me noopener">Connect <span aria-hidden="true">↗</span></a>
+  </header>
+  <main class="article-shell">
+    <a class="article-back" href="/#insights">← Back to insights</a>
+    <article>
+      <header class="article-header">
+        <p class="article-meta">AI-Assisted Software Development · October 30, 2026 · 6 min read</p>
+        <h1>Context Engineering for AI Coding Assistants: Build a Repository Map, Not a Code Dump</h1>
+        <p class="article-deck">Giving a coding assistant more files is not the same as giving it better context. A small, task-specific repository map can be easier to inspect, safer to share and more useful to the model.</p>
+      </header>
+      <div class="article-body">
+<p>When an AI coding assistant produces a change that ignores a local convention, edits the wrong layer or invents a test command, the first instinct is often to improve the prompt. The real problem may be the context assembled around that prompt.</p>
+<p>A request such as “add retry handling” is incomplete without the relevant interface, the caller, error policy, nearby tests and the repository’s validation commands. At the other extreme, attaching the entire repository introduces unrelated code, generated files and potentially sensitive material. Context engineering is the discipline of selecting the smallest useful evidence set for the task.</p>
+
+<h2>Start with a task map</h2>
+<p>Before asking the model to change code, translate the request into a compact map. Identify the target file, its direct dependencies, the tests that observe the behavior, and the commands that define success. Include architecture notes or interface contracts only when they constrain the change.</p>
+<p>Anthropic’s <a href="https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents">context engineering guidance</a> describes context as a finite resource and recommends the smallest set of high-signal tokens that fully communicates expected behavior. That principle applies directly to coding work: relevance should determine inclusion, not repository size.</p>
+<p>A useful task map can answer five questions:</p>
+<ul>
+  <li>What behavior must change, and what must remain stable?</li>
+  <li>Which file owns that behavior?</li>
+  <li>Which interfaces and callers constrain the implementation?</li>
+  <li>Which tests or checks provide an independent oracle?</li>
+  <li>Which files are prohibited from entering model context?</li>
+</ul>
+
+<h2>Separate durable instructions from task evidence</h2>
+<p>Repository-wide rules should not be repeated in every request. Put stable information—build commands, test commands, directory roles, coding conventions and safety boundaries—in the instruction mechanism supported by the tool. GitHub’s <a href="https://docs.github.com/en/copilot/concepts/prompting-and-context/custom-instructions">documentation for repository custom instructions</a> explicitly positions them as project-specific context for frameworks, architecture, coding and testing conventions. It also supports path-specific instructions so guidance for one area does not overload every task.</p>
+<p>Task evidence is different. It changes with every issue: the current diff, the exact interface, a failing test, or a short design decision. Keep these two layers distinct. Durable instructions explain how the repository works; task evidence explains what is happening now.</p>
+<p>Instructions are guidance, not enforcement. Build, lint, type, security and test checks must still run outside the model. For generated tests, use <a href="/insights/ai-generated-tests-independent-oracles.html">independent test oracles</a> instead of allowing the assistant’s implementation and expectations to validate each other.</p>
+
+<h2>Apply a context budget and a denylist</h2>
+<p>A context builder should be deterministic enough to review. Rank candidate files by relationship to the task, reject sensitive paths before reading their contents, and stop when the explicit budget is exhausted. The budget may be tokens in a real integration; the character limit below keeps the example dependency-free.</p>
+<pre style="overflow-x:auto; padding:20px; border:1px solid var(--line); border-radius:12px; background:var(--panel)"><code>from dataclasses import dataclass
+import re
+
+@dataclass(frozen=True)
+class Candidate:
+    path: str
+    relation: str
+    content: str
+
+PRIORITY = {"changed": 0, "dependency": 1, "test": 2, "docs": 3}
+DENIED = [r"(^|/)\.env($|\.)", r"\.(pem|key)$", r"(^|/)secrets?/"]
+
+def is_denied(path):
+    return any(re.search(pattern, path, re.I) for pattern in DENIED)
+
+def build_context(candidates, budget=520):
+    blocks, manifest, used = [], [], 0
+    for item in sorted(candidates, key=lambda x: (PRIORITY[x.relation], x.path)):
+        if is_denied(item.path):
+            continue
+        block = f"## {item.path} [{item.relation}]\n{item.content.strip()}\n"
+        if used + len(block) &gt; budget:
+            continue
+        blocks.append(block)
+        manifest.append(item.path)
+        used += len(block)
+    return "\n".join(blocks), manifest
+
+candidates = [
+    Candidate("app/service.py", "changed", "from app.pricing import total\n\ndef quote(items): return total(items)"),
+    Candidate("app/pricing.py", "dependency", "def total(items): return sum(items)"),
+    Candidate("tests/test_service.py", "test", "def test_quote(): assert quote([2, 3]) == 5"),
+    Candidate("docs/architecture.md", "docs", "service.py owns quote orchestration"),
+    Candidate(".env", "dependency", "API_TOKEN=never-share-this"),
+]
+
+bundle, manifest = build_context(candidates)
+print("selected:", manifest)
+print(bundle)
+assert manifest[0] == "app/service.py"
+assert ".env" not in manifest and "never-share-this" not in bundle
+assert len(bundle) &lt;= 520</code></pre>
+<p>Save the example as <code>context_map.py</code> and run <code>python3 context_map.py</code>. It selects the changed file first, then related implementation and tests while excluding <code>.env</code>. A production version should derive relationships from a language-aware dependency graph, test metadata and the actual diff rather than accepting manually labelled candidates.</p>
+<p>Path filtering is only one control. Secrets can exist in ordinary source, logs or fixtures, so scan content before sending it to a model and minimize retention. Treat retrieved repository text as untrusted data as well. OWASP’s <a href="https://genai.owasp.org/glossary/context-window/">context-window security guidance</a> notes that confidential content and untrusted instructions can coexist in the same model input, creating exposure and prompt-injection risks.</p>
+
+<h2>Make the bundle observable</h2>
+<p>Record the manifest, selection reason, budget, excluded paths and source revision alongside each AI-assisted change. This makes context failures diagnosable: reviewers can see whether the assistant missed a contract because it was absent, ignored it despite being present, or received contradictory instructions.</p>
+<p>After generation, verify the patch against the original task map. Run deterministic checks, inspect the diff, and reject unrelated edits. Validate any structured model output before it reaches automation, following the layered approach in <a href="/insights/llm-output-validation-beyond-json.html">LLM output validation beyond valid JSON</a>. If an assistant can call tools or modify external state, use the execution limits and recovery controls described in <a href="/insights/harness-engineering-reliable-ai-agents.html">harness engineering for reliable AI agents</a>.</p>
+<p>Good context engineering does not try to make the model know everything. It gives the model the evidence required for one bounded decision, preserves a record of that evidence, and leaves acceptance to independent engineering controls.</p>
+<p class="article-meta">Primary sources checked October 30, 2026. The repository and token values in the example are synthetic and report no personal production results.</p>
+<footer class="article-footer">Written by <strong>Yalçın Yakar</strong> — exploring software engineering across development, DevOps, QA and complex systems.</footer>
+      </div>
+    </article>
+  </main>
+  <footer><span>© 2026 Yalçın Yakar</span><span>Software Engineering · DevOps · QA · AI</span></footer>
+</body>
+</html>
