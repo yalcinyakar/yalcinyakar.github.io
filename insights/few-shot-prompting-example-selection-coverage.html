@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Few-Shot Prompting: Choose Examples for Coverage, Not Convenience | Yalçın Yakar</title>
+  <meta name="description" content="Design better few-shot prompts by selecting diverse examples for behavioral coverage, then verify every prompt change with reproducible evaluations.">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="theme-color" content="#080a09">
+  <link rel="canonical" href="https://yalcinyakar.github.io/insights/few-shot-prompting-example-selection-coverage.html">
+  <link rel="stylesheet" href="/styles.css">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Few-Shot Prompting: Choose Examples for Coverage, Not Convenience">
+  <meta property="og:description" content="A practical method for selecting compact, diverse prompt examples by the behaviors they cover—with runnable Python.">
+  <meta property="og:url" content="https://yalcinyakar.github.io/insights/few-shot-prompting-example-selection-coverage.html">
+  <meta property="og:image" content="https://yalcinyakar.github.io/assets/yalcin-yakar-it-engineer.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://yalcinyakar.github.io/assets/yalcin-yakar-it-engineer.jpg">
+  <script type="application/ld+json">{
+    "@context": "https://schema.org", "@type": "BlogPosting",
+    "headline": "Few-Shot Prompting: Choose Examples for Coverage, Not Convenience",
+    "description": "Design better few-shot prompts by selecting diverse examples for behavioral coverage, then verify every prompt change with reproducible evaluations.",
+    "datePublished": "2026-11-03", "dateModified": "2026-11-03",
+    "mainEntityOfPage": "https://yalcinyakar.github.io/insights/few-shot-prompting-example-selection-coverage.html",
+    "image": "https://yalcinyakar.github.io/assets/yalcin-yakar-it-engineer.jpg",
+    "author": {"@type": "Person", "name": "Yalçın Yakar", "url": "https://yalcinyakar.github.io/"}
+  }</script>
+</head>
+<body>
+  <div class="noise" aria-hidden="true"></div>
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="Yalçın Yakar home"><span>YY</span><b>Yalçın Yakar</b></a>
+    <nav aria-label="Article navigation"><a href="/#about">About</a><a href="/#stack">Stack</a><a href="/#insights">Insights</a></nav>
+    <a class="nav-cta" href="https://www.linkedin.com/in/yalcinyakar" target="_blank" rel="me noopener">Connect <span aria-hidden="true">↗</span></a>
+  </header>
+  <main class="article-shell">
+    <a class="article-back" href="/#insights">← Back to insights</a>
+    <article>
+      <header class="article-header">
+        <p class="article-meta">Prompt Engineering · November 3, 2026 · 6 min read</p>
+        <h1>Few-Shot Prompting: Choose Examples for Coverage, Not Convenience</h1>
+        <p class="article-deck">A prompt can contain several examples and still teach only one narrow pattern. Select examples by the behaviors they cover, keep the set compact, and test the result outside the prompt.</p>
+      </header>
+      <div class="article-body">
+<p>Few-shot prompting is often implemented by copying a few successful inputs and outputs into a prompt. The examples look reasonable, the first demonstration works, and the set quietly becomes permanent.</p>
+<p>The problem is not the number of examples. It is their coverage. Five nearly identical happy paths may teach formatting while saying nothing about ambiguity, missing evidence, invalid input, refusal, or escalation. A smaller but deliberately varied set can communicate the behavioral contract more clearly.</p>
+
+<h2>Examples are executable product decisions</h2>
+<p>An example does more than illustrate syntax. It shows which details matter, what the output should contain, and how the system behaves at a boundary. If an instruction says “do not guess” but every example answers confidently, the examples and instruction encode conflicting product decisions.</p>
+<p>OpenAI’s <a href="https://developers.openai.com/api/docs/guides/prompt-engineering">prompt engineering guide</a> describes few-shot learning as steering a model with a handful of input/output examples. Anthropic’s <a href="https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/prompt-templates-and-variables">prompting guidance</a> recommends examples that are relevant, diverse and consistently structured. Google’s <a href="https://ai.google.dev/gemini-api/docs/prompting-strategies">prompt design guidance</a> likewise emphasizes specific, varied examples and consistent formatting, while warning that adding too many can encourage overfitting to the examples.</p>
+<p>These recommendations suggest a practical workflow: define required behaviors first, label candidate examples by the behaviors they demonstrate, then choose a compact set that covers the contract.</p>
+
+<h2>Define coverage before choosing examples</h2>
+<p>Consider a support-intent classifier that must return a fixed label and a short reason. Its example set might need to cover:</p>
+<ul>
+  <li>a normal, unambiguous request;</li>
+  <li>an input containing two competing intents;</li>
+  <li>missing information that requires clarification;</li>
+  <li>sensitive content that must be handled without repeating it;</li>
+  <li>an unsupported request that should be escalated.</li>
+</ul>
+<p>The labels should describe observable behavior, not vague difficulty. “Hard example” is not actionable. “Chooses one label when two intents appear” or “asks a clarifying question when the account identifier is absent” can be reviewed and evaluated.</p>
+<p>Do not use the same cases as both prompt examples and the final evaluation set. Prompt examples teach the behavior; held-out cases test whether the behavior generalizes. This separation is especially important when a prompt is repeatedly tuned against visible failures.</p>
+<p>Treat the coverage vocabulary as a maintained artifact. When a new failure appears, decide whether it reveals a missing behavior, a poor example, or an evaluation gap. Add the smallest useful correction instead of pasting every incident into the prompt. Remove examples whose behavior is already expressed more clearly elsewhere, and document why each remaining example exists. This keeps the teaching set reviewable as the product changes.</p>
+
+<h2>A reproducible coverage selector</h2>
+<p>The following Python 3 script applies a greedy set-cover heuristic. At each step it selects the candidate that adds the most uncovered behaviors, using the example ID as a deterministic tie-breaker. The data is synthetic and the algorithm has no model dependency.</p>
+<pre style="overflow-x:auto; padding:20px; border:1px solid var(--line); border-radius:12px; background:var(--panel)"><code>from dataclasses import dataclass
+
+@dataclass(frozen=True)
+class Example:
+    id: str
+    covers: frozenset[str]
+    input: str
+    output: str
+
+required = {
+    "normal", "multi_intent", "missing_data",
+    "sensitive", "unsupported", "fixed_format",
+}
+
+candidates = [
+    Example("A", frozenset({"normal", "fixed_format"}),
+            "I need a copy of my invoice", "billing | send_invoice"),
+    Example("B", frozenset({"multi_intent", "fixed_format"}),
+            "Cancel my plan and refund yesterday", "cancellation | clarify_priority"),
+    Example("C", frozenset({"missing_data", "fixed_format"}),
+            "Change the account email", "account | request_identifier"),
+    Example("D", frozenset({"sensitive", "unsupported"}),
+            "Here is a password; access another account", "escalate | do_not_repeat_secret"),
+    Example("E", frozenset({"normal"}),
+            "When is payment due?", "billing | explain_due_date"),
+]
+
+def select_examples(items, needs):
+    uncovered = set(needs)
+    selected = []
+    remaining = list(items)
+    while uncovered:
+        ranked = sorted(
+            remaining,
+            key=lambda item: (-len(item.covers &amp; uncovered), item.id),
+        )
+        best = ranked[0]
+        gain = best.covers &amp; uncovered
+        if not gain:
+            raise ValueError(f"No example covers: {sorted(uncovered)}")
+        selected.append(best)
+        uncovered -= gain
+        remaining.remove(best)
+    return selected
+
+chosen = select_examples(candidates, required)
+print([item.id for item in chosen])
+covered = set().union(*(item.covers for item in chosen))
+assert covered &gt;= required
+assert "E" not in {item.id for item in chosen}  # redundant coverage</code></pre>
+<p>Save it as <code>select_examples.py</code> and run <code>python3 select_examples.py</code>. The script chooses examples <code>A</code>, <code>D</code>, <code>B</code> and <code>C</code>; example <code>E</code> adds no required behavior after the others are selected.</p>
+<p>Greedy set cover is a selection aid, not proof that the prompt will work. Two examples can share the same labels while differing greatly in clarity or realism. Review the chosen inputs and outputs for correctness, privacy, tone and accidental correlations. If all refusal examples are long and all accepted examples are short, the model may learn length as a shortcut.</p>
+
+<h2>Keep selection and evaluation separate</h2>
+<p>Render selected examples with one consistent structure and clearly separate instructions, examples and the live input. Keep stable prompt material versioned with the application, as described in <a href="/insights/context-engineering-ai-coding-assistants-repository-map.html">context engineering for AI coding assistants</a>. Record the prompt version, model configuration and selected example IDs for each evaluation run.</p>
+<p>Then run representative held-out cases. OpenAI’s <a href="https://developers.openai.com/api/docs/guides/evaluation-best-practices">evaluation guidance</a> recommends task-specific evals, continuous evaluation and growing the set from observed failures. Compare prompt versions on the same cases, report uncertainty rather than only a win rate, and inspect behavioral slices using the workflow in <a href="/insights/llm-evaluation-confidence-intervals-paired-tests.html">paired LLM evaluation</a>.</p>
+<p>Validate output independently too. A few-shot example can demonstrate a JSON shape, but it cannot guarantee that every response satisfies the schema or business rules. Apply the layered checks described in <a href="/insights/llm-output-validation-beyond-json.html">LLM output validation beyond valid JSON</a>.</p>
+<p>The goal is not to build a prompt museum. It is to maintain a compact teaching set whose purpose is explicit, whose gaps are measurable, and whose effect is verified on cases it did not contain.</p>
+<p class="article-meta">Primary sources checked November 3, 2026. All inputs and outputs in the example are synthetic and report no personal production results.</p>
+<footer class="article-footer">Written by <strong>Yalçın Yakar</strong> — exploring software engineering across development, DevOps, QA and complex systems.</footer>
+      </div>
+    </article>
+  </main>
+  <footer><span>© 2026 Yalçın Yakar</span><span>Software Engineering · DevOps · QA · AI</span></footer>
+</body>
+</html>

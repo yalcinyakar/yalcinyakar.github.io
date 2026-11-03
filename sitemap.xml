@@ -4,7 +4,7 @@
   xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
   <url>
     <loc>https://yalcinyakar.github.io/</loc>
-    <lastmod>2026-10-30</lastmod>
+    <lastmod>2026-11-03</lastmod>
     <image:image>
       <image:loc>https://yalcinyakar.github.io/assets/yalcin-yakar-it-engineer.jpg</image:loc>
       <image:title>Yalçın Yakar, IT Engineer</image:title>
@@ -70,5 +70,9 @@
   <url>
     <loc>https://yalcinyakar.github.io/insights/context-engineering-ai-coding-assistants-repository-map.html</loc>
     <lastmod>2026-10-30</lastmod>
+  </url>
+  <url>
+    <loc>https://yalcinyakar.github.io/insights/few-shot-prompting-example-selection-coverage.html</loc>
+    <lastmod>2026-11-03</lastmod>
   </url>
 </urlset>
