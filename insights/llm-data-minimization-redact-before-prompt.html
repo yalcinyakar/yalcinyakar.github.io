@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Data Minimization for LLM Applications: Redact Before You Prompt | Yalçın Yakar</title>
+  <meta name="description" content="Reduce sensitive-data exposure in LLM applications with field allowlists, deterministic redaction, pseudonymous references and verification gates.">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="theme-color" content="#080a09">
+  <link rel="canonical" href="https://yalcinyakar.github.io/insights/llm-data-minimization-redact-before-prompt.html">
+  <link rel="stylesheet" href="/styles.css">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Data Minimization for LLM Applications: Redact Before You Prompt">
+  <meta property="og:description" content="A practical pattern for reducing sensitive data before it enters an LLM request—with runnable Python.">
+  <meta property="og:url" content="https://yalcinyakar.github.io/insights/llm-data-minimization-redact-before-prompt.html">
+  <meta property="og:image" content="https://yalcinyakar.github.io/assets/yalcin-yakar-it-engineer.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://yalcinyakar.github.io/assets/yalcin-yakar-it-engineer.jpg">
+  <script type="application/ld+json">{
+    "@context": "https://schema.org", "@type": "BlogPosting",
+    "headline": "Data Minimization for LLM Applications: Redact Before You Prompt",
+    "description": "Reduce sensitive-data exposure in LLM applications with field allowlists, deterministic redaction, pseudonymous references and verification gates.",
+    "datePublished": "2026-11-06", "dateModified": "2026-11-06",
+    "mainEntityOfPage": "https://yalcinyakar.github.io/insights/llm-data-minimization-redact-before-prompt.html",
+    "image": "https://yalcinyakar.github.io/assets/yalcin-yakar-it-engineer.jpg",
+    "author": {"@type": "Person", "name": "Yalçın Yakar", "url": "https://yalcinyakar.github.io/"}
+  }</script>
+</head>
+<body>
+  <div class="noise" aria-hidden="true"></div>
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="Yalçın Yakar home"><span>YY</span><b>Yalçın Yakar</b></a>
+    <nav aria-label="Article navigation"><a href="/#about">About</a><a href="/#stack">Stack</a><a href="/#insights">Insights</a></nav>
+    <a class="nav-cta" href="https://www.linkedin.com/in/yalcinyakar" target="_blank" rel="me noopener">Connect <span aria-hidden="true">↗</span></a>
+  </header>
+  <main class="article-shell">
+    <a class="article-back" href="/#insights">← Back to insights</a>
+    <article>
+      <header class="article-header">
+        <p class="article-meta">Responsible AI · November 6, 2026 · 6 min read</p>
+        <h1>Data Minimization for LLM Applications: Redact Before You Prompt</h1>
+        <p class="article-deck">The safest sensitive field is the one that never enters the model request. Build the smallest task payload first, then redact, verify and log only what the workflow actually needs.</p>
+      </header>
+      <div class="article-body">
+<p>LLM integrations often begin with a convenient object: a support ticket, customer record, incident payload, document or conversation. Passing that object directly to a model is easy. It also turns every attached field into part of the application’s AI data flow, whether the task needs it or not.</p>
+<p>A summarization request may need the issue text and product category, but not a full name, email address, authentication token, internal note or raw account identifier. Asking the model to “ignore sensitive data” does not remove that data from the request. Minimization must happen in deterministic application code before prompt assembly.</p>
+
+<h2>Start with purpose, not available fields</h2>
+<p>Define the decision the model supports and list the minimum information required for that decision. Use a field allowlist rather than a denylist. A denylist tries to predict every sensitive field name; an allowlist makes new fields excluded by default.</p>
+<p>NIST’s <a href="https://www.nist.gov/itl/ai-risk-management-framework">AI Risk Management Framework</a> treats privacy as part of trustworthy AI, and the framework notes that data-minimizing methods such as de-identification and aggregation can support privacy-enhanced systems. Its <a href="https://www.nist.gov/publications/artificial-intelligence-risk-management-framework-generative-artificial-intelligence">Generative AI Profile</a> extends risk management across the GAI lifecycle rather than treating privacy as a final prompt instruction.</p>
+<p>For each permitted field, decide whether the model needs the original value, a generalized value, a pseudonymous reference, or no value. A delivery city may be sufficient where a street address is not. An account tier may be useful where an account number is not. A stable pseudonym can support correlation without exposing the source identifier.</p>
+
+<h2>Build a pre-prompt trust boundary</h2>
+<p>Place minimization between authorized data retrieval and prompt construction. The sequence should be explicit:</p>
+<ol>
+  <li>authorize the caller and retrieve only permitted records;</li>
+  <li>project the record through a task-specific field allowlist;</li>
+  <li>redact sensitive patterns inside permitted free text;</li>
+  <li>replace identifiers with scoped pseudonyms when correlation is required;</li>
+  <li>verify that prohibited patterns are absent before sending;</li>
+  <li>apply output validation before displaying or acting on the response.</li>
+</ol>
+<p>OWASP’s <a href="https://genai.owasp.org/llmrisk/llm022025-sensitive-information-disclosure/">Sensitive Information Disclosure guidance</a> recommends sanitization, input validation, restricted data sources and least-privilege access. It also warns that prompt instructions about confidentiality may not always be followed. The enforcement point therefore belongs outside the model.</p>
+
+<h2>A runnable minimization gate</h2>
+<p>This dependency-free Python example creates a minimal payload for a synthetic support-summary task. It allowlists three source fields, masks email addresses and token-like strings inside free text, and converts the account ID into a scoped HMAC reference.</p>
+<pre style="overflow-x:auto; padding:20px; border:1px solid var(--line); border-radius:12px; background:var(--panel)"><code>import hashlib
+import hmac
+import json
+import re
+
+# Demonstration key only. Load a real key from managed secret storage.
+DEMO_KEY = b"demo-key-not-for-production"
+EMAIL = re.compile(r"\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b", re.I)
+TOKEN = re.compile(r"\b(?:sk|api|token)[-_][A-Z0-9_-]{8,}\b", re.I)
+
+def pseudonymize(value, scope):
+    message = f"{scope}:{value}".encode()
+    return hmac.new(DEMO_KEY, message, hashlib.sha256).hexdigest()[:12]
+
+def redact(text):
+    text = EMAIL.sub("[EMAIL]", text)
+    return TOKEN.sub("[TOKEN]", text)
+
+def build_payload(record):
+    # Explicit projection: name, email, api_key and notes never enter payload.
+    payload = {
+        "locale": record["locale"],
+        "account_ref": pseudonymize(record["account_id"], "support-summary"),
+        "issue": redact(record["issue"]),
+    }
+    encoded = json.dumps(payload, sort_keys=True)
+    if EMAIL.search(encoded) or TOKEN.search(encoded):
+        raise ValueError("Sensitive pattern survived minimization")
+    return payload
+
+source = {
+    "name": "Example User",
+    "email": "person@example.test",
+    "account_id": "ACC-0042",
+    "locale": "en",
+    "issue": "Contact person@example.test; token-ABCD1234 must be rotated.",
+    "api_key": "api-NEVER_SEND99",
+    "internal_notes": "Synthetic note that the model does not need.",
+}
+
+safe = build_payload(source)
+print(json.dumps(safe, indent=2, sort_keys=True))
+rendered = json.dumps(safe)
+assert "Example User" not in rendered
+assert "person@example.test" not in rendered
+assert "NEVER_SEND" not in rendered
+assert safe["issue"] == "Contact [EMAIL]; [TOKEN] must be rotated."</code></pre>
+<p>Save it as <code>minimize_payload.py</code> and run <code>python3 minimize_payload.py</code>. The output contains the locale, a scoped reference and redacted issue text—nothing else from the source object.</p>
+<p>The regexes are deliberately small and are not a complete DLP system. Real deployments need detectors appropriate to their languages, identifiers and data classes, plus tests for obfuscation, Unicode variants, encoded values and false positives. HMAC keys belong in managed secret storage and should be rotated under a defined policy.</p>
+
+<h2>Provider controls are not minimization</h2>
+<p>Transport encryption, training policies, regional processing and retention settings matter, but they answer different questions. OpenAI’s current <a href="https://developers.openai.com/api/docs/guides/your-data">data controls documentation</a>, for example, distinguishes abuse-monitoring logs from application state and documents endpoint-specific retention behavior. An integration should verify the settings for the exact endpoint and features it uses.</p>
+<p>Those controls do not make unnecessary input necessary. Data that is removed before the request cannot appear in provider logs, traces, prompt caches, model output or downstream debugging artifacts. Minimize first; then configure provider and infrastructure controls for the smaller remaining payload.</p>
+
+<h2>Test the negative space</h2>
+<p>Most tests confirm that required fields are present. Privacy tests must also confirm that prohibited fields are absent. Create synthetic fixtures containing every sensitive class, run them through the full prompt builder, and fail if raw values survive. Test both request and response paths, because the model may reproduce sensitive context it legitimately received.</p>
+<p>Keep prompt composition observable without logging raw prompts by default. Record the minimizer version, policy ID, allowed field names, detector results and payload hash. Apply the same discipline to retrieved documents using the task-focused selection approach in <a href="/insights/context-engineering-ai-coding-assistants-repository-map.html">context engineering for AI coding assistants</a>. For RAG, enforce authorization before retrieval and measure retrieval independently as described in <a href="/insights/rag-evaluation-measure-retrieval-before-llm.html">RAG evaluation</a>.</p>
+<p>Finally, treat model output as untrusted. Parsing and schema checks are only the beginning; apply the business validation described in <a href="/insights/llm-output-validation-beyond-json.html">LLM output validation beyond valid JSON</a>. If the system proposes an external action, bind authorization to the exact minimized and validated proposal using <a href="/insights/responsible-ai-human-approval-gates.html">a real human approval gate</a>.</p>
+<p>Responsible AI integration starts before inference. The model should receive enough information to perform one bounded task—not every field the application happened to retrieve.</p>
+<p class="article-meta">Primary sources checked November 6, 2026. All records and identifiers in the example are synthetic and report no personal production results.</p>
+<footer class="article-footer">Written by <strong>Yalçın Yakar</strong> — exploring software engineering across development, DevOps, QA and complex systems.</footer>
+      </div>
+    </article>
+  </main>
+  <footer><span>© 2026 Yalçın Yakar</span><span>Software Engineering · DevOps · QA · AI</span></footer>
+</body>
+</html>
