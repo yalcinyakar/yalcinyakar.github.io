@@ -26,6 +26,7 @@ nav a:hover, nav a:focus-visible { color: var(--text); }
 nav a:hover::after, nav a:focus-visible::after { right: 0; }
 .nav-cta { justify-self: end; color: var(--lime); font-size: .86rem; font-weight: 750; text-decoration: none; }
 .nav-cta span { margin-left: 8px; }
+.mobile-nav { display: none; }
 .hero { min-height: calc(100vh - 84px); display: grid; grid-template-columns: minmax(0, 1.18fr) minmax(390px, .82fr); gap: clamp(50px, 8vw, 120px); align-items: center; padding: 74px 0 96px; }
 .status { display: inline-flex; align-items: center; gap: 10px; margin-bottom: 32px; color: var(--muted); font-size: .78rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
 .status i { width: 8px; height: 8px; border-radius: 50%; background: var(--lime); box-shadow: 0 0 0 7px rgba(200,255,77,.09); }
@@ -146,33 +147,50 @@ footer { display: flex; justify-content: space-between; gap: 20px; padding: 34px
   .role-detail { grid-column: 2; }
 }
 @media (max-width: 680px) {
-  .site-header, main, footer { width: min(100% - 32px, var(--max)); }
-  .site-header { height: 72px; }
-  .brand b { display: none; }
-  .hero { min-height: auto; padding: 62px 0 82px; gap: 70px; }
-  h1 { font-size: clamp(3rem, 14vw, 5.8rem); }
-  .hero-lead { font-size: 1.08rem; }
-  .button { width: 100%; }
-  .quick-facts { gap: 16px; }
-  .quick-facts strong { font-size: 1.35rem; }
-  .quick-facts span { font-size: .75rem; }
-  .portrait-column { padding-bottom: 90px; }
+  body { font-size: 15px; }
+  .site-header, main, footer { width: min(100% - 40px, var(--max)); }
+  .site-header { min-height: 64px; }
+  .brand span { width: 34px; height: 34px; }
+  .hero { min-height: auto; padding: 42px 0 60px; gap: 46px; }
+  .status { margin-bottom: 22px; font-size: .7rem; }
+  h1 { margin-bottom: 24px; font-size: clamp(2.85rem, 13vw, 4.2rem); line-height: .94; }
+  .hero-lead { margin-bottom: 28px; font-size: 1rem; line-height: 1.55; }
+  .hero-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .button { width: auto; min-width: 0; gap: 12px; padding: 13px 14px; }
+  .hero-actions .button:first-child { grid-column: 1 / -1; }
+  .quick-facts { gap: 12px; margin-top: 42px; padding-top: 20px; }
+  .quick-facts li { padding-right: 8px; }
+  .quick-facts strong { font-size: 1.2rem; }
+  .quick-facts span { font-size: .68rem; }
+  .portrait-column { padding-bottom: 0; }
   .portrait figcaption { flex-direction: column; gap: 2px; }
-  .code-card { left: 18px; right: -8px; }
-  .section { padding: 92px 0; }
-  .about-copy h2, .section-heading h2, .connect h2 { font-size: clamp(2.7rem, 13vw, 4.5rem); }
+  .portrait img { height: min(105vw, 470px); }
+  .code-card { display: none; }
+  .section { padding: 64px 0; }
+  .section-heading { gap: 20px; margin-bottom: 38px; }
+  .about-copy h2, .section-heading h2, .connect h2 { margin-bottom: 22px; font-size: clamp(2.15rem, 10vw, 3.1rem); line-height: 1; }
+  .about-copy p { font-size: 1.05rem; line-height: 1.65; }
   .stack-grid { grid-template-columns: 1fr; }
-  .stack-card { min-height: 380px; }
-  .timeline article { grid-template-columns: 1fr; gap: 10px; }
+  .stack-card { min-height: 0; padding: 24px; }
+  .card-head { margin-bottom: 38px; }
+  .stack-card h3 { font-size: 1.7rem; }
+  .stack-card p { margin-bottom: 20px; }
+  .domain-strip { gap: 10px 18px; padding-block: 22px; }
+  .domain-strip b { font-size: .95rem; }
+  .timeline article { grid-template-columns: 1fr; gap: 8px; padding: 26px 0; }
   .role-detail { grid-column: auto; margin-top: 12px; }
   .education-grid { grid-template-columns: 1fr; }
+  .education-grid article { padding: 24px; }
+  .education-grid h3 { margin-top: 32px; }
   .credential-grid { grid-template-columns: 1fr; }
-  .credential-grid article, .credential-grid article:nth-child(even) { padding: 26px 0; border-right: 0; }
+  .credential-grid article, .credential-grid article:nth-child(even) { min-height: 0; padding: 22px 0; border-right: 0; }
   .insight-card { grid-template-columns: 1fr; gap: 16px; padding: 24px; }
-  .insight-card h3 { font-size: clamp(1.45rem, 7vw, 2rem); }
+  .insight-card + .insight-card { margin-top: 12px; }
+  .insight-card h3 { font-size: clamp(1.4rem, 6.5vw, 1.8rem); }
   .insight-card b { display: none; }
   .article-shell { padding-top: 44px; }
-  .connect { width: 100vw; margin-left: calc(50% - 50vw); padding: 88px 20px; }
+  .connect { width: 100vw; margin-left: calc(50% - 50vw); padding: 64px 20px; }
+  .connect h2 { margin: 28px 0 44px; }
   footer { flex-direction: column; }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -204,15 +222,21 @@ nav a::after { bottom: 3px; }
 .stack-card:hover { transform: none; }
 .code-card pre { overflow-x: auto; }
 @media (max-width: 980px) {
-  .site-header { height: auto; min-height: 84px; }
-  .site-header nav { display: flex; grid-row: 2; grid-column: 1 / -1; overflow-x: auto; gap: 20px; padding: 0 2px 8px; }
-  .site-header nav a { flex-shrink: 0; }
-  .site-header .nav-cta { grid-column: 2; grid-row: 1; }
-  html { scroll-padding-top: 140px; }
+  .site-header { position: sticky; grid-template-columns: 1fr auto; min-height: 72px; }
+  .site-header > nav, .site-header > .nav-cta { display: none; }
+  .mobile-nav { display: block; justify-self: end; }
+  .mobile-nav summary { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 4px; color: var(--lime); font-size: .82rem; font-weight: 750; cursor: pointer; list-style: none; }
+  .mobile-nav summary::-webkit-details-marker { display: none; }
+  .mobile-nav summary span { font-size: 1.25rem; transition: transform .2s ease; }
+  .mobile-nav[open] summary span { transform: rotate(45deg); }
+  .mobile-nav nav { position: absolute; top: 100%; left: 0; right: 0; display: grid; gap: 0; padding: 10px 20px 18px; background: rgba(8,10,9,.98); border-bottom: 1px solid var(--line); }
+  .mobile-nav nav a { display: flex; min-height: 48px; align-items: center; border-bottom: 1px solid var(--line); font-size: .95rem; }
+  .mobile-nav nav a:last-child { border-bottom: 0; }
+  html { scroll-padding-top: 80px; }
 }
 @media (max-width: 680px) {
-  .site-header { min-height: 72px; }
-  .site-header .brand { min-height: 60px; }
+  .site-header { min-height: 64px; }
+  .site-header .brand { min-height: 56px; }
   .back-top { right: 16px; }
 }
 @media (prefers-reduced-motion: reduce) {

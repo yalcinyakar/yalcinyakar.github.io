@@ -46,7 +46,7 @@ if (search) {
   update();
 }
 
-const links = [...document.querySelectorAll('nav[aria-label="Primary navigation"] a[href^="#"]')];
+const links = [...document.querySelectorAll('.site-header nav a[href^="#"]')];
 if (links.length) {
   const sections = links.map((link) => document.querySelector(link.getAttribute("href"))).filter(Boolean);
   let scheduled = false;
@@ -73,3 +73,8 @@ if (links.length) {
   window.addEventListener("resize", schedule);
   updateNavigation();
 }
+
+const mobileNavigation = document.querySelector(".mobile-nav");
+mobileNavigation?.querySelectorAll("a").forEach((link) => {
+  link.addEventListener("click", () => mobileNavigation.removeAttribute("open"));
+});
