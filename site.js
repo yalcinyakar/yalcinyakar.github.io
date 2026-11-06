@@ -19,17 +19,30 @@ const search = document.querySelector("#insight-search");
 if (search) {
   const cards = [...document.querySelectorAll("#insight-list .insight-card")];
   const count = document.querySelector("#insight-count");
+  const more = document.querySelector("#insights-more");
+  const initialVisible = 6;
+  let expanded = false;
   const update = () => {
     const query = search.value.trim().toLocaleLowerCase("en");
     let matches = 0;
-    cards.forEach((card) => {
-      card.hidden = !card.textContent.toLocaleLowerCase("en").includes(query);
-      if (!card.hidden) matches++;
+    cards.forEach((card, index) => {
+      const matchesQuery = card.textContent.toLocaleLowerCase("en").includes(query);
+      card.hidden = !matchesQuery || (!query && !expanded && index >= initialVisible);
+      if (matchesQuery) matches++;
     });
-    count.textContent = matches ? `${matches} of ${cards.length} notes` : "No matches. Try another keyword.";
+    if (!matches) count.textContent = "No matches. Try another keyword.";
+    else if (query) count.textContent = `${matches} of ${cards.length} notes`;
+    else count.textContent = expanded ? `${cards.length} notes` : `Showing ${Math.min(initialVisible, cards.length)} of ${cards.length} notes`;
+    more.hidden = Boolean(query) || expanded || cards.length <= initialVisible;
   };
   search.closest(".insights-search").hidden = false;
   search.addEventListener("input", update);
+  more.textContent = `Show all ${cards.length} notes`;
+  more.addEventListener("click", () => {
+    expanded = true;
+    update();
+    cards[initialVisible]?.focus();
+  });
   update();
 }
 
