@@ -4,12 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; script-src 'self' 'sha256-ntoOzGUxxHPD9jDNIkut9nZyG0m5xQ1YAdz5FIHDQjU='; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'none'; frame-src 'none'; media-src 'none'; worker-src 'none'; form-action 'none'; upgrade-insecure-requests">
-  <meta name="color-scheme" content="dark">
+  <meta name="color-scheme" content="light">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>Yalçın Yakar | Software Engineering, DevOps, QA & AI</title>
   <meta name="description" content="Yalçın Yakar is an IT Engineer working across software development, delivery automation, quality engineering, telecom systems and applied AI.">
   <meta name="robots" content="index, follow, max-image-preview:large">
-  <meta name="theme-color" content="#080a09">
+  <meta name="theme-color" content="#e9edf1">
   <link rel="canonical" href="https://yalcinyakar.github.io/">
   <meta property="og:type" content="website">
   <meta property="og:title" content="Yalçın Yakar | Software Engineering, DevOps, QA & AI">
@@ -58,7 +58,7 @@
   <header class="site-header">
     <a class="brand" href="#top" aria-label="Yalçın Yakar home"><span>YY</span><b>Yalçın Yakar</b></a>
     <nav aria-label="Primary navigation">
-      <a href="#about">Profile</a>
+      <a href="#projects">Work</a>
       <a href="#experience">Experience</a>
       <a href="#stack">Expertise</a>
       <a href="#insights">Writing</a>
@@ -68,7 +68,7 @@
     <details class="mobile-nav">
       <summary>Menu <span aria-hidden="true">+</span></summary>
       <nav aria-label="Mobile navigation">
-        <a href="#about">Profile</a>
+        <a href="#projects">Work</a>
         <a href="#experience">Experience</a>
         <a href="#stack">Expertise</a>
         <a href="#insights">Writing</a>
@@ -81,7 +81,7 @@
     <section class="hero">
       <div class="hero-content">
         <div class="status">Yalçın Yakar · IT Engineer</div>
-        <h1>Engineering reliable software systems.</h1>
+        <h1>Software, systems and applied AI.</h1>
         <p class="hero-lead">Computer engineer working across backend development, delivery automation, quality engineering, telecom systems and applied AI.</p>
         <div class="hero-actions">
           <a class="button primary" href="#experience">View experience <span aria-hidden="true">↓</span></a>
@@ -102,8 +102,22 @@
           </picture>
           <figcaption>İstanbul · Türkiye</figcaption>
         </figure>
+        <div class="code-card" aria-label="Professional profile summary">
+          <div class="code-top"><span></span><span></span><span></span><b>profile.js</b></div>
+          <pre><code><span class="syntax">const</span> engineer = {
+  name: <span class="string">"Yalçın Yakar"</span>,
+  title: <span class="string">"IT Engineer"</span>,
+  focus: [<span class="string">"Software"</span>, <span class="string">"AI"</span>, <span class="string">"Quality"</span>]
+};</code></pre>
+        </div>
       </div>
     </section>
+
+    <nav class="portfolio-stats" aria-label="Portfolio overview">
+      <a href="#insights"><strong>16</strong><span>technical articles</span></a>
+      <a href="#books"><strong>2</strong><span>technical books</span></a>
+      <a href="https://github.com/yalcinyakar?tab=repositories" target="_blank" rel="me noopener"><strong>47</strong><span>public repositories</span></a>
+    </nav>
 
     <section class="about section" id="about">
       <div class="section-kicker"><span>01</span> Profile</div>
@@ -113,9 +127,39 @@
       </div>
     </section>
 
+    <section class="projects section" id="projects">
+      <div class="section-heading">
+        <div class="section-kicker"><span>02</span> Selected work</div>
+        <h2>Selected projects.</h2>
+      </div>
+      <div class="project-grid">
+        <article class="project-card project-featured">
+          <div class="project-meta"><span>Applied AI · Python</span><span>2026</span></div>
+          <h3>OctoCortex</h3>
+          <p>A hybrid global-workspace and distributed spiking-neural-network architecture simulator, with a browser-based grid-world experiment and measurable arbitration decisions.</p>
+          <div class="project-links">
+            <a href="https://yalcinyakar.github.io/octocortex/" target="_blank" rel="noopener">Open live experiment ↗</a>
+            <a href="https://github.com/yalcinyakar/octocortex" target="_blank" rel="noopener">Source code ↗</a>
+          </div>
+        </article>
+        <article class="project-card">
+          <div class="project-meta"><span>Knowledge project · Web</span><span>71 entries</span></div>
+          <h3>EARTH</h3>
+          <p>A sourced field guide to Earth for off-world visitors, combining science, culture and a deliberately dry human sense of humour.</p>
+          <div class="project-links"><a href="/earth-guide/">Explore the field guide ↗</a></div>
+        </article>
+        <article class="project-card">
+          <div class="project-meta"><span>Technical book · Turkish</span><span>Book</span></div>
+          <h3>İslamiyetten Önce Nesne Tabanlı Programlama</h3>
+          <p>Object-oriented programming explained through an intentionally anachronistic, technical and satirical narrative.</p>
+          <div class="project-links"><a href="#books">View books ↓</a></div>
+        </article>
+      </div>
+    </section>
+
     <section class="experience section" id="experience">
       <div class="section-heading">
-        <div class="section-kicker"><span>02</span> Experience</div>
+        <div class="section-kicker"><span>03</span> Experience</div>
         <h2>Professional experience.</h2>
       </div>
       <div class="timeline">
@@ -144,7 +188,7 @@
 
     <section class="stack section" id="stack">
       <div class="section-heading">
-        <div class="section-kicker"><span>03</span> Expertise</div>
+        <div class="section-kicker"><span>04</span> Expertise</div>
         <h2>Areas of practice.</h2>
       </div>
       <div class="stack-grid">
@@ -178,7 +222,7 @@
 
     <section class="certifications section" id="certifications">
       <div class="section-heading">
-        <div class="section-kicker"><span>04</span> Certifications</div>
+        <div class="section-kicker"><span>05</span> Certifications</div>
         <h2>Credentials.</h2>
       </div>
       <div class="credential-grid">
@@ -192,16 +236,35 @@
     </section>
 
     <section class="education section">
-      <div class="section-kicker"><span>05</span> Education</div>
+      <div class="section-kicker"><span>06</span> Education</div>
       <div class="education-grid">
         <article><span>2025</span><h3>Master of Business Administration</h3><p>Istanbul University</p></article>
         <article><span>BSc</span><h3>Computer Engineering</h3><p>Beykent University · GPA 3.22 / 4.00</p></article>
       </div>
     </section>
 
+    <section class="books section" id="books">
+      <div class="section-heading">
+        <div class="section-kicker"><span>07</span> Books</div>
+        <h2>Technical books.</h2>
+      </div>
+      <div class="book-grid">
+        <a class="book-card" href="https://play.google.com/store/search?q=%C4%B0slamiyetten%20%C3%B6nce%20Nesne%20Tabanl%C4%B1%20Programlama&amp;c=books&amp;hl=tr" target="_blank" rel="noopener">
+          <span>01 · Object-oriented programming</span>
+          <h3>İslamiyetten Önce Nesne Tabanlı Programlama</h3>
+          <b>Google Play Books’ta ara ↗</b>
+        </a>
+        <a class="book-card" href="https://play.google.com/store/search?q=Osmanl%C4%B1%27da%20DevOps%20K%C3%BClt%C3%BCr%C3%BC%20ve%20Lale%20Devri&amp;c=books&amp;hl=tr" target="_blank" rel="noopener">
+          <span>02 · DevOps culture</span>
+          <h3>Osmanlı’da DevOps Kültürü ve Lale Devri</h3>
+          <b>Google Play Books’ta ara ↗</b>
+        </a>
+      </div>
+    </section>
+
     <section class="insights section" id="insights">
       <div class="section-heading">
-        <div class="section-kicker"><span>06</span> Writing</div>
+        <div class="section-kicker"><span>08</span> Writing</div>
         <h2>Selected writing.</h2>
       </div>
       <div class="insights-search" hidden>

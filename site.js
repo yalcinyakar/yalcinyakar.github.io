@@ -1,20 +1,3 @@
-const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-if (!reducedMotion && "IntersectionObserver" in window) {
-  const sections = document.querySelectorAll(".section");
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach((entry) => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add("visible");
-        observer.unobserve(entry.target);
-      }
-    });
-  }, { threshold: 0, rootMargin: "0px 0px -24px 0px" });
-  sections.forEach((section) => {
-    section.classList.add("reveal");
-    observer.observe(section);
-  });
-}
-
 const search = document.querySelector("#insight-search");
 if (search) {
   const cards = [...document.querySelectorAll("#insight-list .insight-card")];
