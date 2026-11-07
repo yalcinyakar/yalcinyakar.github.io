@@ -3,6 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; script-src 'self' 'sha256-V1Y8949XxghzpEm3R3Fc/K7juaPOyzYX4+D4LFNLEw0='; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'none'; frame-src 'none'; media-src 'none'; worker-src 'none'; form-action 'none'; upgrade-insecure-requests">
+  <meta name="color-scheme" content="dark">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>Data Minimization for LLM Applications: Redact Before You Prompt | Yalçın Yakar</title>
   <meta name="description" content="Reduce sensitive-data exposure in LLM applications with field allowlists, deterministic redaction, pseudonymous references and verification gates.">
   <meta name="robots" content="index, follow, max-image-preview:large">
@@ -27,13 +30,20 @@
   }</script>
 </head>
 <body>
+  <a class="skip-link" href="#article">Skip to article</a>
   <div class="noise" aria-hidden="true"></div>
   <header class="site-header">
     <a class="brand" href="/" aria-label="Yalçın Yakar home"><span>YY</span><b>Yalçın Yakar</b></a>
     <nav aria-label="Article navigation"><a href="/#about">About</a><a href="/#stack">Stack</a><a href="/#insights">Insights</a></nav>
     <a class="nav-cta" href="https://www.linkedin.com/in/yalcinyakar" target="_blank" rel="me noopener">Connect <span aria-hidden="true">↗</span></a>
+    <details class="mobile-nav">
+      <summary>Menu <span aria-hidden="true">+</span></summary>
+      <nav aria-label="Mobile navigation">
+        <a href="/">Home</a><a href="/#stack">Stack</a><a href="/#insights">Insights</a><a href="/#connect">Contact</a>
+      </nav>
+    </details>
   </header>
-  <main class="article-shell">
+  <main class="article-shell" id="article" tabindex="-1">
     <a class="article-back" href="/#insights">← Back to insights</a>
     <article>
       <header class="article-header">
@@ -64,7 +74,7 @@
 
 <h2>A runnable minimization gate</h2>
 <p>This dependency-free Python example creates a minimal payload for a synthetic support-summary task. It allowlists three source fields, masks email addresses and token-like strings inside free text, and converts the account ID into a scoped HMAC reference.</p>
-<pre style="overflow-x:auto; padding:20px; border:1px solid var(--line); border-radius:12px; background:var(--panel)"><code>import hashlib
+<pre><code>import hashlib
 import hmac
 import json
 import re
@@ -128,6 +138,6 @@ assert safe["issue"] == "Contact [EMAIL]; [TOKEN] must be rotated."</code></pre>
       </div>
     </article>
   </main>
-  <footer><span>© 2026 Yalçın Yakar</span><span>Software Engineering · DevOps · QA · AI</span></footer>
+  <footer><span>© 2026 Yalçın Yakar</span><span>Semantic HTML · Modern CSS · Zero dependencies</span></footer>
 </body>
 </html>

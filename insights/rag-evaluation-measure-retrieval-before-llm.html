@@ -3,6 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; script-src 'self' 'sha256-YsSOPXX5u8BQRFF0TADUH3MjUIB79Ld625BPCZVCcsA='; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'none'; frame-src 'none'; media-src 'none'; worker-src 'none'; form-action 'none'; upgrade-insecure-requests">
+  <meta name="color-scheme" content="dark">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>RAG Evaluation: Measure Retrieval Before Blaming the LLM | Yalçın Yakar</title>
   <meta name="description" content="Evaluate RAG systems by separating retrieval from generation. Learn Precision@K, Recall@K, MRR, groundedness, and a practical regression workflow.">
   <meta name="robots" content="index, follow, max-image-preview:large">
@@ -33,14 +36,21 @@
 }</script>
 </head>
 <body>
+  <a class="skip-link" href="#article">Skip to article</a>
   <div class="noise" aria-hidden="true"></div>
   <header class="site-header">
     <a class="brand" href="/" aria-label="Yalçın Yakar home"><span>YY</span><b>Yalçın Yakar</b></a>
     <nav aria-label="Article navigation"><a href="/#about">About</a><a href="/#stack">Stack</a><a href="/#insights">Insights</a></nav>
     <a class="nav-cta" href="https://www.linkedin.com/in/yalcinyakar" target="_blank" rel="me noopener">Connect <span aria-hidden="true">↗</span></a>
+    <details class="mobile-nav">
+      <summary>Menu <span aria-hidden="true">+</span></summary>
+      <nav aria-label="Mobile navigation">
+        <a href="/">Home</a><a href="/#stack">Stack</a><a href="/#insights">Insights</a><a href="/#connect">Contact</a>
+      </nav>
+    </details>
   </header>
 
-  <main class="article-shell">
+  <main class="article-shell" id="article" tabindex="-1">
     <a class="article-back" href="/#insights">← Back to insights</a>
     <article>
       <header class="article-header">
@@ -69,7 +79,7 @@
 
 <h2>A runnable retrieval check</h2>
 <p>The following Python 3 example is deliberately provider-independent. It evaluates one synthetic query using document identifiers, so it can be run locally without an API key or external package.</p>
-<pre style="overflow-x:auto; padding:20px; border:1px solid var(--line); border-radius:12px; background:var(--panel)"><code>from math import isclose
+<pre><code>from math import isclose
 
 def precision_at_k(retrieved, relevant, k):
     top = retrieved[:k]
@@ -120,6 +130,6 @@ print(&quot;Retrieval checks passed&quot;)</code></pre>
     </article>
   </main>
 
-  <footer><span>© 2026 Yalçın Yakar</span><span>Software Engineering · DevOps · QA · AI</span></footer>
+  <footer><span>© 2026 Yalçın Yakar</span><span>Semantic HTML · Modern CSS · Zero dependencies</span></footer>
 </body>
 </html>

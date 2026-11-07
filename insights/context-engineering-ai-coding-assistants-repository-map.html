@@ -3,6 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; script-src 'self' 'sha256-SZIn2hAItfOi8YLwso3P1lrkrELOw6jLsYgBkzIGrMQ='; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'none'; frame-src 'none'; media-src 'none'; worker-src 'none'; form-action 'none'; upgrade-insecure-requests">
+  <meta name="color-scheme" content="dark">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>Context Engineering for AI Coding Assistants: Build a Repository Map, Not a Code Dump | Yalçın Yakar</title>
   <meta name="description" content="Build focused repository context for AI coding assistants using task maps, scoped instructions, secret filtering and reproducible budget checks.">
   <meta name="robots" content="index, follow, max-image-preview:large">
@@ -27,13 +30,20 @@
   }</script>
 </head>
 <body>
+  <a class="skip-link" href="#article">Skip to article</a>
   <div class="noise" aria-hidden="true"></div>
   <header class="site-header">
     <a class="brand" href="/" aria-label="Yalçın Yakar home"><span>YY</span><b>Yalçın Yakar</b></a>
     <nav aria-label="Article navigation"><a href="/#about">About</a><a href="/#stack">Stack</a><a href="/#insights">Insights</a></nav>
     <a class="nav-cta" href="https://www.linkedin.com/in/yalcinyakar" target="_blank" rel="me noopener">Connect <span aria-hidden="true">↗</span></a>
+    <details class="mobile-nav">
+      <summary>Menu <span aria-hidden="true">+</span></summary>
+      <nav aria-label="Mobile navigation">
+        <a href="/">Home</a><a href="/#stack">Stack</a><a href="/#insights">Insights</a><a href="/#connect">Contact</a>
+      </nav>
+    </details>
   </header>
-  <main class="article-shell">
+  <main class="article-shell" id="article" tabindex="-1">
     <a class="article-back" href="/#insights">← Back to insights</a>
     <article>
       <header class="article-header">
@@ -64,7 +74,7 @@
 
 <h2>Apply a context budget and a denylist</h2>
 <p>A context builder should be deterministic enough to review. Rank candidate files by relationship to the task, reject sensitive paths before reading their contents, and stop when the explicit budget is exhausted. The budget may be tokens in a real integration; the character limit below keeps the example dependency-free.</p>
-<pre style="overflow-x:auto; padding:20px; border:1px solid var(--line); border-radius:12px; background:var(--panel)"><code>from dataclasses import dataclass
+<pre><code>from dataclasses import dataclass
 import re
 
 @dataclass(frozen=True)
@@ -118,6 +128,6 @@ assert len(bundle) &lt;= 520</code></pre>
       </div>
     </article>
   </main>
-  <footer><span>© 2026 Yalçın Yakar</span><span>Software Engineering · DevOps · QA · AI</span></footer>
+  <footer><span>© 2026 Yalçın Yakar</span><span>Semantic HTML · Modern CSS · Zero dependencies</span></footer>
 </body>
 </html>

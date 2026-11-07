@@ -3,6 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; script-src 'self' 'sha256-ntoOzGUxxHPD9jDNIkut9nZyG0m5xQ1YAdz5FIHDQjU='; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'none'; frame-src 'none'; media-src 'none'; worker-src 'none'; form-action 'none'; upgrade-insecure-requests">
+  <meta name="color-scheme" content="dark">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>Yalçın Yakar | Software Engineering, DevOps, QA & AI</title>
   <meta name="description" content="Yalçın Yakar is an IT Engineer at Ericsson with 7+ years of experience across software development, DevOps, QA engineering and telecom systems.">
   <meta name="robots" content="index, follow, max-image-preview:large">
@@ -15,6 +18,7 @@
   <meta property="og:image" content="https://yalcinyakar.github.io/assets/yalcin-yakar-it-engineer.jpg">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:image" content="https://yalcinyakar.github.io/assets/yalcin-yakar-it-engineer.jpg">
+  <link rel="preload" as="image" href="/assets/yalcin-yakar-it-engineer.avif" type="image/avif" fetchpriority="high">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23080a09'/%3E%3Cpath d='M14 15h10l8 15 8-15h10L37 39v11H27V39z' fill='%23c8ff4d'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="/styles.css">
   <script type="application/ld+json">
@@ -86,14 +90,18 @@
         </div>
         <ul class="quick-facts" aria-label="Professional highlights">
           <li><strong>7+</strong><span>Years of total tech experience</span></li>
-          <li><strong>4</strong><span>Engineering focus areas</span></li>
+          <li><strong>5</strong><span>Engineering focus areas</span></li>
           <li><strong>E2E</strong><span>Code to production perspective</span></li>
         </ul>
       </div>
 
       <div class="portrait-column">
         <figure class="portrait">
-          <img src="/assets/yalcin-yakar-it-engineer.jpg" width="812" height="900" alt="Yalçın Yakar, IT Engineer at Ericsson" fetchpriority="high">
+          <picture>
+            <source srcset="/assets/yalcin-yakar-it-engineer.avif" type="image/avif">
+            <source srcset="/assets/yalcin-yakar-it-engineer.webp" type="image/webp">
+            <img src="/assets/yalcin-yakar-it-engineer.jpg" width="812" height="900" alt="Yalçın Yakar, IT Engineer at Ericsson" fetchpriority="high" decoding="async">
+          </picture>
           <figcaption><span>Yalçın Yakar</span><span>İstanbul · Türkiye</span></figcaption>
         </figure>
         <div class="code-card" aria-label="Professional profile summary">
@@ -315,7 +323,7 @@
     </section>
   </main>
 
-  <footer><span>© 2026 Yalçın Yakar</span><span>Software Engineering · DevOps · QA · AI</span></footer>
+  <footer><span>© 2026 Yalçın Yakar</span><span>Semantic HTML · Modern CSS · Zero dependencies</span></footer>
   <a class="back-top" href="#top" aria-label="Back to top">↑ <span>Top</span></a>
   <script src="/site.js" defer></script>
 </body>

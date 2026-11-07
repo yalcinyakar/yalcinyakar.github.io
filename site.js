@@ -48,7 +48,7 @@ if (search) {
 
 const links = [...document.querySelectorAll('.site-header nav a[href^="#"]')];
 if (links.length) {
-  const sections = links.map((link) => document.querySelector(link.getAttribute("href"))).filter(Boolean);
+  const sections = [...new Set(links.map((link) => document.querySelector(link.getAttribute("href"))).filter(Boolean))];
   let scheduled = false;
   const updateNavigation = () => {
     const header = document.querySelector(".site-header");
@@ -77,4 +77,13 @@ if (links.length) {
 const mobileNavigation = document.querySelector(".mobile-nav");
 mobileNavigation?.querySelectorAll("a").forEach((link) => {
   link.addEventListener("click", () => mobileNavigation.removeAttribute("open"));
+});
+document.addEventListener("click", (event) => {
+  if (mobileNavigation?.open && !mobileNavigation.contains(event.target)) mobileNavigation.removeAttribute("open");
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && mobileNavigation?.open) {
+    mobileNavigation.removeAttribute("open");
+    mobileNavigation.querySelector("summary")?.focus();
+  }
 });
