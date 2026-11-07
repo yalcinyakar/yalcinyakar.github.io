@@ -1,6 +1,6 @@
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 if (!reducedMotion && "IntersectionObserver" in window) {
-  const sections = document.querySelectorAll(".section, .domain-strip");
+  const sections = document.querySelectorAll(".section");
   const observer = new IntersectionObserver((entries) => {
     entries.forEach((entry) => {
       if (entry.isIntersecting) {
@@ -31,13 +31,13 @@ if (search) {
       if (matchesQuery) matches++;
     });
     if (!matches) count.textContent = "No matches. Try another keyword.";
-    else if (query) count.textContent = `${matches} of ${cards.length} notes`;
-    else count.textContent = expanded ? `${cards.length} notes` : `Showing ${Math.min(initialVisible, cards.length)} of ${cards.length} notes`;
+    else if (query) count.textContent = `${matches} of ${cards.length} articles`;
+    else count.textContent = expanded ? `${cards.length} articles` : `Showing ${Math.min(initialVisible, cards.length)} of ${cards.length} articles`;
     more.hidden = Boolean(query) || expanded || cards.length <= initialVisible;
   };
   search.closest(".insights-search").hidden = false;
   search.addEventListener("input", update);
-  more.textContent = `Show all ${cards.length} notes`;
+  more.textContent = `Show all ${cards.length} articles`;
   more.addEventListener("click", () => {
     expanded = true;
     update();
