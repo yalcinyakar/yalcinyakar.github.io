@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; script-src 'self' 'sha256-UVrI7fIDqTvqorLs10uhYytHrr+VgK3GhLsbfjEalcg='; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'none'; frame-src 'none'; media-src 'none'; worker-src 'none'; form-action 'none'; upgrade-insecure-requests">
+  <meta name="color-scheme" content="light">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>Prompt Caching for Generative AI: Design Stable Prefixes, Then Measure | Yalçın Yakar</title>
+  <meta name="description" content="Design prompt caching for generative AI with stable prefixes, deterministic fingerprints and cache-hit metrics. Includes a runnable Python audit.">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="theme-color" content="#e9edf1">
+  <link rel="canonical" href="https://yalcinyakar.github.io/insights/prompt-caching-generative-ai-stable-prefixes.html">
+  <link rel="stylesheet" href="/styles.css">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Prompt Caching for Generative AI: Design Stable Prefixes, Then Measure">
+  <meta property="og:description" content="A practical guide to stable prompt prefixes, cache-aware request design and measurable cache performance.">
+  <meta property="og:url" content="https://yalcinyakar.github.io/insights/prompt-caching-generative-ai-stable-prefixes.html">
+  <meta property="og:image" content="https://yalcinyakar.github.io/assets/yalcin-yakar-it-engineer.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://yalcinyakar.github.io/assets/yalcin-yakar-it-engineer.jpg">
+  <script type="application/ld+json">{
+    "@context": "https://schema.org", "@type": "BlogPosting",
+    "headline": "Prompt Caching for Generative AI: Design Stable Prefixes, Then Measure",
+    "description": "Design prompt caching for generative AI with stable prefixes, deterministic fingerprints and cache-hit metrics.",
+    "datePublished": "2026-11-10", "dateModified": "2026-11-10",
+    "mainEntityOfPage": "https://yalcinyakar.github.io/insights/prompt-caching-generative-ai-stable-prefixes.html",
+    "image": "https://yalcinyakar.github.io/assets/yalcin-yakar-it-engineer.jpg",
+    "author": {"@type": "Person", "name": "Yalçın Yakar", "url": "https://yalcinyakar.github.io/"}
+  }</script>
+</head>
+<body>
+  <a class="skip-link" href="#article">Skip to article</a>
+  <div class="noise" aria-hidden="true"></div>
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="Yalçın Yakar home"><span>YY</span><b>Yalçın Yakar</b></a>
+    <nav aria-label="Article navigation"><a href="/#projects">Work</a><a href="/#experience">Experience</a><a href="/#stack">Expertise</a><a href="/#insights">Writing</a></nav>
+    <a class="nav-cta" href="https://www.linkedin.com/in/yalcinyakar" target="_blank" rel="me noopener">Connect <span aria-hidden="true">↗</span></a>
+    <details class="mobile-nav">
+      <summary>Menu <span aria-hidden="true">+</span></summary>
+      <nav aria-label="Mobile navigation">
+        <a href="/">Home</a><a href="/#projects">Work</a><a href="/#experience">Experience</a><a href="/#stack">Expertise</a><a href="/#insights">Writing</a><a href="/#connect">Contact</a>
+      </nav>
+    </details>
+  </header>
+  <main class="article-shell" id="article" tabindex="-1">
+    <a class="article-back" href="/#insights">← Back to insights</a>
+    <article>
+      <header class="article-header">
+        <p class="article-meta">Generative AI · November 10, 2026 · 7 min read</p>
+        <h1>Prompt Caching for Generative AI: Design Stable Prefixes, Then Measure</h1>
+        <p class="article-deck">Prompt caching is not a switch that makes every repeated request cheaper. It is a request-design problem: keep reusable context stable, isolate changing input and verify the result with usage data.</p>
+      </header>
+      <div class="article-body">
+<p>Generative AI applications often resend the same material: developer instructions, output schemas, tool definitions, examples, policies or a long reference document. Reprocessing that shared context on every request adds latency and input cost even though most of the prompt has not changed. Prompt caching lets a provider reuse previously computed state for an identical prompt prefix.</p>
+<p>The important word is <em>prefix</em>. A cache does not search the request for vaguely similar paragraphs. It matches reusable content from the beginning up to an eligible boundary. A timestamp near the top, reordered tools or a regenerated schema can turn a seemingly identical request into a cache miss.</p>
+
+<h2>Build the request in two zones</h2>
+<p>Separate each request into a stable prefix and a dynamic suffix. The prefix should contain content reused across a meaningful group of calls:</p>
+<ul>
+  <li>developer instructions and policy constraints;</li>
+  <li>tool definitions in a deterministic order;</li>
+  <li>output schemas serialized consistently;</li>
+  <li>few-shot examples that belong to the application version;</li>
+  <li>shared reference material.</li>
+</ul>
+<p>The suffix contains values expected to change: the current user message, request identifiers, timestamps, retrieved records and per-call configuration. Keep those values after the reusable boundary.</p>
+<p>OpenAI’s <a href="https://developers.openai.com/api/docs/guides/prompt-caching">prompt-caching guide</a> recommends stable instructions and reference material first, with dynamic content later. Anthropic’s <a href="https://platform.claude.com/docs/en/build-with-claude/prompt-caching">prompt-caching documentation</a> similarly describes caching the full prompt prefix through a breakpoint. Google’s <a href="https://ai.google.dev/gemini-api/docs/caching">Gemini context-caching guide</a> advises placing large common content at the beginning to improve implicit cache-hit probability. The APIs differ, but the architectural rule is consistent.</p>
+
+<h2>Stability means bytes, not intent</h2>
+<p>Two schemas may be semantically equivalent while their serialized text differs. Key ordering, whitespace, generated descriptions or version banners can change the rendered prefix. Tool arrays are especially easy to destabilize if they are built from an unordered collection.</p>
+<p>Use deterministic serialization and explicit versioning. Sort keys, preserve array order, normalize line endings and keep application metadata outside the prefix unless it genuinely affects model behavior. When a policy or tool changes, increment a prefix version deliberately. That turns an unexplained miss into an observable deployment event.</p>
+
+<h2>A runnable prefix audit</h2>
+<p>The following dependency-free Python script does not imitate a provider cache. It verifies the property a cache needs: identical reusable prefixes produce identical fingerprints, while per-request values remain outside that fingerprint.</p>
+<pre><code>import hashlib
+import json
+
+TOOLS = [
+    {"name": "lookup_order", "schema": {"type": "object",
+      "properties": {"order_id": {"type": "string"}},
+      "required": ["order_id"]}},
+    {"name": "create_summary", "schema": {"type": "object",
+      "properties": {"text": {"type": "string"}},
+      "required": ["text"]}},
+]
+
+def canonical(value):
+    return json.dumps(value, sort_keys=True, separators=(",", ":"))
+
+def build_request(user_text, request_id):
+    stable_prefix = {
+        "prefix_version": "support-v3",
+        "developer": "Answer from supplied context. Never invent records.",
+        "tools": TOOLS,
+        "output_schema": {
+            "type": "object",
+            "properties": {"answer": {"type": "string"}},
+            "required": ["answer"],
+        },
+    }
+    dynamic_suffix = {
+        "request_id": request_id,
+        "user": user_text,
+    }
+    fingerprint = hashlib.sha256(
+        canonical(stable_prefix).encode("utf-8")
+    ).hexdigest()[:16]
+    return stable_prefix, dynamic_suffix, fingerprint
+
+first = build_request("Summarize order A-17", "req-1001")
+second = build_request("Summarize order B-42", "req-1002")
+
+assert first[2] == second[2]
+assert first[1] != second[1]
+print("stable_prefix_sha256:", first[2])
+print("dynamic_request:", canonical(second[1]))</code></pre>
+<p>Save the file as <code>prefix_audit.py</code> and run <code>python3 prefix_audit.py</code>. Add this fingerprint to structured application telemetry, not to the model prompt. If the fingerprint changes unexpectedly between requests that should share a prefix, inspect the request builder before blaming provider routing.</p>
+
+<h2>Do not optimize only for hit rate</h2>
+<p>A high cache-hit rate can still hide a poor design. Padding a prefix with irrelevant material may cross a provider’s cache eligibility threshold while increasing uncached input, cache writes and model distraction. Cache only context the task needs.</p>
+<p>Track at least five values by model and prefix version: total input tokens, cached input tokens, cache-write tokens where exposed, time to first token and realized input cost. Compare warm and cold requests separately. OpenAI exposes cached-token and cache-write details in usage data; Anthropic reports cache-read and cache-creation input tokens; Gemini returns cached-token information in usage metadata. Field names and pricing change, so read the current provider documentation rather than hard-coding assumptions into dashboards.</p>
+<p>Roll out caching behind a configuration flag, collect a cold baseline, then compare several warm repetitions with the same prefix. A single successful hit proves eligibility; a distribution reveals whether the design remains effective under normal traffic.</p>
+<p>Use a small evaluation set before and after restructuring. Moving instructions changes prompt layout even when wording remains the same. Verify task success, formatting and safety behavior, following the paired-case discipline described in <a href="/insights/llm-evaluation-confidence-intervals-paired-tests.html">LLM evaluation with uncertainty</a>.</p>
+
+<h2>Cache boundaries are also data boundaries</h2>
+<p>Reusable does not mean universally shareable. Tenant-specific policies, private documents and user history should not be placed in a global prefix merely to improve reuse. Group cacheable context at the narrowest valid scope and follow the provider’s isolation controls. Remove unnecessary sensitive fields before prompt construction using the approach in <a href="/insights/llm-data-minimization-redact-before-prompt.html">data minimization for LLM applications</a>.</p>
+<p>Prompt caching works best when request construction is boring: stable instructions first, deterministic tools and schemas, dynamic input last, deliberate version changes and measured outcomes. That discipline improves more than cache reuse. It makes prompts easier to diff, test and operate as production software.</p>
+<p class="article-meta">Primary sources checked November 10, 2026. The example is synthetic and reports no production results.</p>
+<footer class="article-footer">Written by <strong>Yalçın Yakar</strong> — exploring software engineering across development, DevOps, QA and complex systems.</footer>
+      </div>
+    </article>
+  </main>
+  <footer><span>© 2026 Yalçın Yakar</span><span>İstanbul · Türkiye</span></footer>
+</body>
+</html>
