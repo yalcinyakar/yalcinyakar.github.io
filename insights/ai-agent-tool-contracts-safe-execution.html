@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; script-src 'self' 'sha256-YhV3lAPLE7QDvvpSlBMm+U7f3mys/K2GCrMvyr48dfo='; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'none'; frame-src 'none'; media-src 'none'; worker-src 'none'; form-action 'none'; upgrade-insecure-requests">
+  <meta name="color-scheme" content="light">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>AI Agent Tool Contracts: Validate Before You Execute | Yalçın Yakar</title>
+  <meta name="description" content="Design safer AI agent tools with strict schemas, policy checks, approval gates, idempotency and auditable execution. Includes a runnable Python example.">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="theme-color" content="#e9edf1">
+  <link rel="canonical" href="https://yalcinyakar.github.io/insights/ai-agent-tool-contracts-safe-execution.html">
+  <link rel="stylesheet" href="/styles.css">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="AI Agent Tool Contracts: Validate Before You Execute">
+  <meta property="og:description" content="A practical pattern for schema validation, policy enforcement, approval gates and idempotent AI agent tools.">
+  <meta property="og:url" content="https://yalcinyakar.github.io/insights/ai-agent-tool-contracts-safe-execution.html">
+  <meta property="og:image" content="https://yalcinyakar.github.io/assets/yalcin-yakar-it-engineer.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://yalcinyakar.github.io/assets/yalcin-yakar-it-engineer.jpg">
+  <script type="application/ld+json">{
+    "@context": "https://schema.org", "@type": "BlogPosting",
+    "headline": "AI Agent Tool Contracts: Validate Before You Execute",
+    "description": "Design safer AI agent tools with strict schemas, policy checks, approval gates and idempotent execution.",
+    "datePublished": "2026-11-13", "dateModified": "2026-11-13",
+    "mainEntityOfPage": "https://yalcinyakar.github.io/insights/ai-agent-tool-contracts-safe-execution.html",
+    "image": "https://yalcinyakar.github.io/assets/yalcin-yakar-it-engineer.jpg",
+    "author": {"@type": "Person", "name": "Yalçın Yakar", "url": "https://yalcinyakar.github.io/"}
+  }</script>
+</head>
+<body>
+  <a class="skip-link" href="#article">Skip to article</a>
+  <div class="noise" aria-hidden="true"></div>
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="Yalçın Yakar home"><span>YY</span><b>Yalçın Yakar</b></a>
+    <nav aria-label="Article navigation"><a href="/#projects">Work</a><a href="/#experience">Experience</a><a href="/#stack">Expertise</a><a href="/#insights">Writing</a></nav>
+    <a class="nav-cta" href="https://www.linkedin.com/in/yalcinyakar" target="_blank" rel="me noopener">Connect <span aria-hidden="true">↗</span></a>
+    <details class="mobile-nav">
+      <summary>Menu <span aria-hidden="true">+</span></summary>
+      <nav aria-label="Mobile navigation">
+        <a href="/">Home</a><a href="/#projects">Work</a><a href="/#experience">Experience</a><a href="/#stack">Expertise</a><a href="/#insights">Writing</a><a href="/#connect">Contact</a>
+      </nav>
+    </details>
+  </header>
+  <main class="article-shell" id="article" tabindex="-1">
+    <a class="article-back" href="/#insights">← Back to insights</a>
+    <article>
+      <header class="article-header">
+        <p class="article-meta">AI Agents · November 13, 2026 · 7 min read</p>
+        <h1>AI Agent Tool Contracts: Validate Before You Execute</h1>
+        <p class="article-deck">A reliable agent tool is more than a function the model can call. It is a controlled boundary that validates intent, applies policy and makes side effects observable before execution.</p>
+      </header>
+      <div class="article-body">
+<p>AI agents become operationally useful when they can call tools: search a catalogue, update a record, create a ticket or trigger a workflow. That same capability creates the main engineering risk. A model can propose an action, but the application still owns the consequences. The tool boundary must therefore reject malformed arguments, enforce authorization and separate a proposed action from an executed one.</p>
+<p>Think of each tool as a small public API. Its contract should answer five questions: what arguments are accepted, who may call it, what resources it may affect, whether it changes state and how a repeated request behaves. A persuasive model explanation is not part of that contract.</p>
+
+<h2>Start with a narrow schema</h2>
+<p>OpenAI’s <a href="https://developers.openai.com/api/docs/guides/function-calling">function-calling guide</a> defines tool parameters with JSON Schema and recommends strict mode. Strict schemas improve structural reliability, but they do not express every business rule. A field can be a valid string and still contain an unauthorized account identifier. A quantity can be a valid integer and still exceed the caller’s limit.</p>
+<p>Use enums instead of open text where the domain is finite. Reject unknown properties. Add length and range limits. Keep identifiers distinct instead of accepting one generic <code>target</code> field. Then validate the parsed call again in application code. Schema validation establishes shape; policy validation establishes permission.</p>
+
+<h2>Classify the side effect</h2>
+<p>Not all tools deserve the same execution path. A read-only lookup can often run immediately after authorization. A reversible update may require a preview. A destructive or externally visible action should pause for approval. OpenAI’s <a href="https://developers.openai.com/api/docs/guides/agents/guardrails-approvals">guardrails and human review guide</a> places checks next to the function tool and recommends approval interruptions for sensitive side effects.</p>
+<p>The Model Context Protocol uses annotations such as read-only, destructive and idempotent as risk vocabulary. Its <a href="https://blog.modelcontextprotocol.io/posts/2026-03-16-tool-annotations/">tool-annotations guidance</a> also warns that annotations are hints, not security controls. Treat them as metadata for routing and user interfaces; enforce the rule in trusted code.</p>
+<p>Keep discovery separate from authority. An agent may be allowed to discover that an update tool exists without being allowed to use it for every tenant, environment or record. Build the permitted tool set from the caller’s current scope, then repeat the authorization check inside the handler. This prevents a stale conversation, cached tool list or manipulated description from becoming an accidental permission grant.</p>
+
+<h2>A runnable policy gate</h2>
+<p>The following Python example validates a proposed credit adjustment. It accepts only known fields, applies an amount limit, requires approval for a state-changing request and uses an idempotency key to prevent duplicate execution.</p>
+<pre><code>from dataclasses import dataclass
+
+ALLOWED_REASONS = {"billing_error", "service_credit"}
+executed = set()
+
+@dataclass(frozen=True)
+class Request:
+    account_id: str
+    amount: int
+    reason: str
+    idempotency_key: str
+
+def validate(payload):
+    expected = {"account_id", "amount", "reason", "idempotency_key"}
+    if set(payload) != expected:
+        raise ValueError("unknown or missing fields")
+    request = Request(**payload)
+    if not request.account_id.startswith("acct_"):
+        raise ValueError("invalid account identifier")
+    if not 1 &lt;= request.amount &lt;= 100:
+        raise ValueError("amount outside policy")
+    if request.reason not in ALLOWED_REASONS:
+        raise ValueError("reason not allowed")
+    if len(request.idempotency_key) &lt; 12:
+        raise ValueError("weak idempotency key")
+    return request
+
+def execute(request, approved=False):
+    if not approved:
+        return {"status": "approval_required", "preview": request}
+    if request.idempotency_key in executed:
+        return {"status": "duplicate_ignored"}
+    executed.add(request.idempotency_key)
+    return {"status": "applied", "account_id": request.account_id}
+
+payload = {
+    "account_id": "acct_2048",
+    "amount": 25,
+    "reason": "service_credit",
+    "idempotency_key": "case-2048-v1",
+}
+
+request = validate(payload)
+print(execute(request))
+print(execute(request, approved=True))
+print(execute(request, approved=True))</code></pre>
+<p>The example deliberately keeps execution synthetic. In a real integration, bind authorization to the authenticated caller, store idempotency keys durably and commit the action in the same transaction that records its result. Do not trust an <code>approved</code> value supplied by the model; derive it from a separate policy or review decision.</p>
+
+<h2>Record the decision, not hidden reasoning</h2>
+<p>An audit event should capture the tool name, normalized arguments or a safe digest, caller identity, policy version, approval decision, idempotency key, execution outcome and correlation identifier. Avoid storing secrets or unnecessary prompt content. The goal is to reconstruct what crossed the boundary and why the application allowed it, not to preserve private model reasoning.</p>
+<p>NIST’s <a href="https://www.nist.gov/publications/artificial-intelligence-risk-management-framework-generative-artificial-intelligence">Generative AI Profile</a> organizes risk work around governance, mapping, measurement and management. Tool telemetry supports all four: ownership is explicit, affected resources are mapped, failure rates are measurable and controls can be revised from observed evidence.</p>
+
+<h2>Test contracts as adversarial interfaces</h2>
+<p>Unit tests should cover valid calls, missing fields, unknown fields, boundary values, unauthorized resources, duplicate keys, rejected approvals and simulated downstream failures. Add cases in which untrusted retrieved text asks the agent to ignore policy or call a more powerful tool. The model may still propose the call; the contract must deny it.</p>
+<p>Evaluate changes with paired cases instead of a single success rate. The approach in <a href="/insights/llm-evaluation-confidence-intervals-paired-tests.html">LLM evaluation with uncertainty</a> helps separate genuine improvement from sampling noise. For inputs that may contain personal or confidential data, apply <a href="/insights/llm-data-minimization-redact-before-prompt.html">data minimization before prompting</a> and again before logging.</p>
+<p>A production-ready agent does not receive broad authority because its language is convincing. It receives small, typed capabilities whose effects are checked at runtime. Strict schemas make calls parseable; policy gates make them permissible; approvals make sensitive intent explicit; idempotency makes retries safe; and audit events make the system explainable after the fact.</p>
+<p class="article-meta">Primary sources checked November 13, 2026. The example is synthetic and reports no production results.</p>
+<footer class="article-footer">Written by <strong>Yalçın Yakar</strong> — exploring software engineering across development, DevOps, QA and complex systems.</footer>
+      </div>
+    </article>
+  </main>
+  <footer><span>© 2026 Yalçın Yakar</span><span>İstanbul · Türkiye</span></footer>
+</body>
+</html>
