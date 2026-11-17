@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; script-src 'self' 'sha256-iNneol/e7jFD5ZWcloxsdOqOmr9VfK9lKjHVcCdZy0Q='; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'none'; frame-src 'none'; media-src 'none'; worker-src 'none'; form-action 'none'; upgrade-insecure-requests">
+  <meta name="color-scheme" content="light">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>Hybrid Search for RAG: Fuse Keyword and Vector Results with RRF | Yalçın Yakar</title>
+  <meta name="description" content="Build hybrid retrieval for RAG by combining keyword and vector rankings with Reciprocal Rank Fusion. Includes a runnable Python example and evaluation plan.">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="theme-color" content="#e9edf1">
+  <link rel="canonical" href="https://yalcinyakar.github.io/insights/hybrid-search-rag-reciprocal-rank-fusion.html">
+  <link rel="stylesheet" href="/styles.css">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Hybrid Search for RAG: Fuse Keyword and Vector Results with RRF">
+  <meta property="og:description" content="A practical guide to combining keyword and vector retrieval with Reciprocal Rank Fusion for RAG systems.">
+  <meta property="og:url" content="https://yalcinyakar.github.io/insights/hybrid-search-rag-reciprocal-rank-fusion.html">
+  <meta property="og:image" content="https://yalcinyakar.github.io/assets/yalcin-yakar-it-engineer.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://yalcinyakar.github.io/assets/yalcin-yakar-it-engineer.jpg">
+  <script type="application/ld+json">{
+    "@context": "https://schema.org", "@type": "BlogPosting",
+    "headline": "Hybrid Search for RAG: Fuse Keyword and Vector Results with RRF",
+    "description": "Build hybrid retrieval for RAG by combining keyword and vector rankings with Reciprocal Rank Fusion.",
+    "datePublished": "2026-11-17", "dateModified": "2026-11-17",
+    "mainEntityOfPage": "https://yalcinyakar.github.io/insights/hybrid-search-rag-reciprocal-rank-fusion.html",
+    "image": "https://yalcinyakar.github.io/assets/yalcin-yakar-it-engineer.jpg",
+    "author": {"@type": "Person", "name": "Yalçın Yakar", "url": "https://yalcinyakar.github.io/"}
+  }</script>
+</head>
+<body>
+  <a class="skip-link" href="#article">Skip to article</a>
+  <div class="noise" aria-hidden="true"></div>
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="Yalçın Yakar home"><span>YY</span><b>Yalçın Yakar</b></a>
+    <nav aria-label="Article navigation"><a href="/#projects">Work</a><a href="/#experience">Experience</a><a href="/#stack">Expertise</a><a href="/#insights">Writing</a></nav>
+    <a class="nav-cta" href="https://www.linkedin.com/in/yalcinyakar" target="_blank" rel="me noopener">Connect <span aria-hidden="true">↗</span></a>
+    <details class="mobile-nav">
+      <summary>Menu <span aria-hidden="true">+</span></summary>
+      <nav aria-label="Mobile navigation">
+        <a href="/">Home</a><a href="/#projects">Work</a><a href="/#experience">Experience</a><a href="/#stack">Expertise</a><a href="/#insights">Writing</a><a href="/#connect">Contact</a>
+      </nav>
+    </details>
+  </header>
+  <main class="article-shell" id="article" tabindex="-1">
+    <a class="article-back" href="/#insights">← Back to insights</a>
+    <article>
+      <header class="article-header">
+        <p class="article-meta">Retrieval-Augmented Generation · November 17, 2026 · 7 min read</p>
+        <h1>Hybrid Search for RAG: Fuse Keyword and Vector Results with RRF</h1>
+        <p class="article-deck">Keyword retrieval understands exact identifiers. Vector retrieval captures semantic similarity. Reciprocal Rank Fusion combines their ranked lists without pretending their scores share the same scale.</p>
+      </header>
+      <div class="article-body">
+<p>A retrieval-augmented generation system can fail before the language model sees a prompt. If retrieval misses the relevant passage, a well-instructed model cannot cite information it never received. Relying on one retrieval method makes that failure more likely when the query distribution is mixed.</p>
+<p>Keyword search is strong when wording matters: product codes, error messages, names, acronyms and exact phrases. Vector search is useful when the user’s language differs from the document’s language but the meaning is close. Hybrid search runs both and merges their results into one candidate list.</p>
+
+<h2>Why raw scores should not be added</h2>
+<p>Keyword and vector retrievers produce scores with different meanings and ranges. A BM25 score of 12 and a cosine similarity of 0.84 are not comparable measurements. Adding them directly makes the result depend on arbitrary scale rather than ranking quality. Score normalization can work, but its calibration becomes another model that must be monitored.</p>
+<p>Reciprocal Rank Fusion, introduced by Cormack, Clarke and Büttcher in their <a href="https://cormack.uwaterloo.ca/cormack/cormacksigir09-rrf.pdf">2009 SIGIR paper</a>, avoids that scale problem. For each document, RRF adds <code>1 / (k + rank)</code> from every ranked list in which it appears. A document near the top of multiple lists accumulates evidence; a document returned by only one method can still compete if it ranks highly.</p>
+
+<h2>Use RRF as a baseline, not a guarantee</h2>
+<p>Elastic’s current <a href="https://www.elastic.co/docs/solutions/search/hybrid-search">hybrid-search documentation</a> recommends RRF for combining full-text and vector retrieval. Azure AI Search also executes text and vector queries in parallel and merges them with RRF, as described in its <a href="https://learn.microsoft.com/azure/search/hybrid-search-overview">hybrid-search overview</a>. These implementations make RRF a practical baseline, but no fusion rule guarantees better results for every corpus.</p>
+<p>RRF discards score magnitude. The first and second documents in a list are treated according to position even if their original scores are nearly equal or dramatically different. If those margins carry useful information, a normalized score-based method may perform better. The correct choice is empirical: compare on labeled queries from the intended workload.</p>
+
+<h2>A runnable RRF implementation</h2>
+<p>The following Python example fuses two ranked lists. In a real system, the lists would come from a lexical retriever and a vector index. The code uses stable document identifiers so the same document can be recognized across both channels.</p>
+<pre><code>from collections import defaultdict
+
+def reciprocal_rank_fusion(rankings, k=60):
+    scores = defaultdict(float)
+    evidence = defaultdict(list)
+
+    for source, documents in rankings.items():
+        for rank, document_id in enumerate(documents, start=1):
+            scores[document_id] += 1.0 / (k + rank)
+            evidence[document_id].append((source, rank))
+
+    ordered = sorted(
+        scores,
+        key=lambda document_id: (-scores[document_id], document_id),
+    )
+    return [
+        {
+            "document_id": document_id,
+            "rrf_score": round(scores[document_id], 6),
+            "evidence": evidence[document_id],
+        }
+        for document_id in ordered
+    ]
+
+rankings = {
+    "keyword": ["doc_error_503", "doc_retry", "doc_timeout"],
+    "vector": ["doc_timeout", "doc_error_503", "doc_backoff"],
+}
+
+for result in reciprocal_rank_fusion(rankings):
+    print(result)</code></pre>
+<p>The shared documents rise because both retrievers support them. The deterministic document-ID tie-breaker keeps test output stable. Keep the source ranks in telemetry; a final fused score without its evidence is difficult to debug.</p>
+
+<h2>Candidate depth changes the result</h2>
+<p>Fusion can only rank documents that a child retriever returns. If each channel supplies five candidates, a relevant document ranked sixth by both is invisible. Retrieve a wider pool than the final context size, fuse it, apply permission and metadata filters, then optionally rerank the smaller set before selecting chunks for the prompt.</p>
+<p>Do not confuse the RRF rank constant with vector <em>k</em>, the number of nearest neighbors. The rank constant controls how quickly contribution falls with position; candidate depth controls which documents can participate. Tune them separately. Azure’s <a href="https://learn.microsoft.com/en-us/azure/search/hybrid-search-ranking">RRF scoring guide</a> documents the formula and uses 60 as its rank constant. Treat that value as a starting point, not a universal optimum.</p>
+
+<h2>Evaluate retrieval before generation</h2>
+<p>Create a query set that deliberately mixes exact identifiers, paraphrases, ambiguous short queries and terminology mismatches. For each query, label relevant documents and compare keyword-only, vector-only and hybrid runs using recall at candidate depth, mean reciprocal rank and nDCG. Slice results by query type; one aggregate score can hide that hybrid retrieval helps paraphrases while harming exact-code lookup.</p>
+<p>The earlier guide on <a href="/insights/rag-evaluation-measure-retrieval-before-llm.html">measuring retrieval before the LLM</a> provides the evaluation structure. When comparing two configurations on the same queries, apply the paired-case approach from <a href="/insights/llm-evaluation-confidence-intervals-paired-tests.html">LLM evaluation with uncertainty</a>.</p>
+<p>A robust RAG pipeline does not choose keyword or vector retrieval as a matter of fashion. It preserves the strengths of both, fuses their evidence transparently and measures the combined ranking on real query classes. RRF is valuable because it is simple, inspectable and indifferent to incompatible score scales. Its simplicity is a baseline for disciplined experiments, not a substitute for them.</p>
+<p class="article-meta">Primary sources checked November 17, 2026. The example is synthetic and reports no production results.</p>
+<footer class="article-footer">Written by <strong>Yalçın Yakar</strong> — exploring software engineering across development, DevOps, QA and complex systems.</footer>
+      </div>
+    </article>
+  </main>
+  <footer><span>© 2026 Yalçın Yakar</span><span>İstanbul · Türkiye</span></footer>
+</body>
+</html>
