@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; script-src 'self' 'sha256-jkG8IJYGaHtpYtPYomHCKvCPhYAA8jcHAmccaPTBZTY='; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'none'; frame-src 'none'; media-src 'none'; worker-src 'none'; form-action 'none'; upgrade-insecure-requests">
+  <meta name="color-scheme" content="light">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>Metamorphic Testing for LLM Applications: Test Relations, Not Exact Answers | Yalçın Yakar</title>
+  <meta name="description" content="Test variable LLM outputs with metamorphic relations, deterministic transformations and runnable Python instead of requiring one exact answer.">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="theme-color" content="#e9edf1">
+  <link rel="canonical" href="https://yalcinyakar.github.io/insights/metamorphic-testing-llm-applications.html">
+  <link rel="stylesheet" href="/styles.css">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Metamorphic Testing for LLM Applications: Test Relations, Not Exact Answers">
+  <meta property="og:description" content="A practical way to test variable AI behavior with related inputs, explicit invariants and reproducible checks.">
+  <meta property="og:url" content="https://yalcinyakar.github.io/insights/metamorphic-testing-llm-applications.html">
+  <meta property="og:image" content="https://yalcinyakar.github.io/assets/yalcin-yakar-it-engineer.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://yalcinyakar.github.io/assets/yalcin-yakar-it-engineer.jpg">
+  <script type="application/ld+json">{
+    "@context": "https://schema.org", "@type": "BlogPosting",
+    "headline": "Metamorphic Testing for LLM Applications: Test Relations, Not Exact Answers",
+    "description": "Test variable LLM outputs with metamorphic relations, deterministic transformations and runnable Python instead of requiring one exact answer.",
+    "datePublished": "2026-11-20", "dateModified": "2026-11-20",
+    "mainEntityOfPage": "https://yalcinyakar.github.io/insights/metamorphic-testing-llm-applications.html",
+    "image": "https://yalcinyakar.github.io/assets/yalcin-yakar-it-engineer.jpg",
+    "author": {"@type": "Person", "name": "Yalçın Yakar", "url": "https://yalcinyakar.github.io/"}
+  }</script>
+</head>
+<body>
+  <a class="skip-link" href="#article">Skip to article</a>
+  <div class="noise" aria-hidden="true"></div>
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="Yalçın Yakar home"><span>YY</span><b>Yalçın Yakar</b></a>
+    <nav aria-label="Article navigation"><a href="/#projects">Work</a><a href="/#experience">Experience</a><a href="/#stack">Expertise</a><a href="/#insights">Writing</a></nav>
+    <a class="nav-cta" href="https://www.linkedin.com/in/yalcinyakar" target="_blank" rel="me noopener">Connect <span aria-hidden="true">↗</span></a>
+    <details class="mobile-nav">
+      <summary>Menu <span aria-hidden="true">+</span></summary>
+      <nav aria-label="Mobile navigation"><a href="/">Home</a><a href="/#projects">Work</a><a href="/#experience">Experience</a><a href="/#stack">Expertise</a><a href="/#insights">Writing</a><a href="/#connect">Contact</a></nav>
+    </details>
+  </header>
+  <main class="article-shell" id="article" tabindex="-1">
+    <a class="article-back" href="/#insights">← Back to insights</a>
+    <article>
+      <header class="article-header">
+        <p class="article-meta">LLM Evaluation · November 20, 2026 · 7 min read</p>
+        <h1>Metamorphic Testing for LLM Applications: Test Relations, Not Exact Answers</h1>
+        <p class="article-deck">When an LLM can produce many acceptable answers, test the relationships that should remain true across carefully transformed inputs.</p>
+      </header>
+      <div class="article-body">
+<p>Traditional unit tests compare an observed result with an expected value. That works well for a parser or calculator, but it becomes brittle for an LLM application: wording can vary while meaning remains correct, and repeated calls may differ even when the prompt is unchanged. The missing piece is often a reliable test oracle—not a lack of test cases.</p>
+<p>Metamorphic testing addresses this problem by checking a relation between executions. Start with a source input, transform it in a controlled way, and state how the output should relate to the original output. You may not know the perfect answer to either prompt, yet you can still detect a violation of an important property.</p>
+
+<h2>Define a relation before generating variants</h2>
+<p>A metamorphic relation has two parts. The input relation explains the transformation; the output relation defines the expected effect. For a sentiment classifier, adding harmless whitespace should preserve the label. For a context-grounded question-answering system, appending an irrelevant sentence should not change a cited fact. For a structured extractor, reordering independent fields should preserve the normalized result.</p>
+<p>A 2025 study on <a href="https://arxiv.org/abs/2511.02108">metamorphic testing of LLMs for NLP</a> catalogued 191 relations across 24 tasks and implemented 36 of them. Its key advantage is practical: related inputs can expose inconsistent behavior without requiring a gold label for every case. The study also found meaningful false positives, especially when a transformation failed to preserve the intended meaning. A relation is therefore an engineering hypothesis, not automatic ground truth.</p>
+<p>Write each relation as a versioned test specification. Record its valid input domain, deterministic transformation when possible, output comparator, tolerance, and known exceptions. Keep the task instruction fixed between source and follow-up prompts so the transformation is the variable under test.</p>
+
+<h2>Choose relations that match the product contract</h2>
+<p>Do not begin with a generic library of synonyms or perturbations. Begin with behavior the application promises. Useful relation families include:</p>
+<ul>
+  <li><strong>Invariance:</strong> formatting, capitalization, or irrelevant context should not change a normalized result.</li>
+  <li><strong>Equivariance:</strong> renaming a fictional entity in the input should produce the corresponding rename in the output.</li>
+  <li><strong>Monotonicity:</strong> adding supporting evidence should not reduce a grounded confidence score, when that score has a defined interpretation.</li>
+  <li><strong>Constraint preservation:</strong> a schema, citation requirement, or refusal boundary should remain satisfied after an allowed transformation.</li>
+</ul>
+<p>OpenAI’s <a href="https://developers.openai.com/api/docs/guides/evaluation-best-practices">evaluation guidance</a> recommends task-specific evals, representative distributions, explicit edge cases, and continuous evaluation. Metamorphic cases complement a labeled evaluation set; they do not replace examples with known correct outcomes, human review, safety testing, or monitoring.</p>
+
+<h2>A runnable relation harness</h2>
+<p>The following Python 3 example tests a synthetic ticket router. Replace <code>route()</code> with an adapter to the system under test, but keep transformations and assertions outside the model call. The relation says capitalization and surrounding whitespace must not change the normalized route.</p>
+<pre><code>from dataclasses import dataclass
+
+@dataclass(frozen=True)
+class Case:
+    text: str
+    expected_relation: str
+
+def route(text: str) -&gt; str:
+    &quot;&quot;&quot;Synthetic stand-in for an LLM-backed classifier.&quot;&quot;&quot;
+    normalized = &quot; &quot;.join(text.lower().split())
+    if &quot;refund&quot; in normalized or &quot;charged twice&quot; in normalized:
+        return &quot;billing&quot;
+    if &quot;password&quot; in normalized or &quot;sign in&quot; in normalized:
+        return &quot;account&quot;
+    return &quot;general&quot;
+
+def variants(text: str):
+    return {
+        &quot;upper-case&quot;: text.upper(),
+        &quot;surrounding-whitespace&quot;: f&quot;  {text}\n&quot;,
+    }
+
+cases = [
+    Case(&quot;I was charged twice for one order&quot;, &quot;same route&quot;),
+    Case(&quot;I cannot sign in with my password&quot;, &quot;same route&quot;),
+    Case(&quot;Where can I download an invoice?&quot;, &quot;same route&quot;),
+]
+
+failures = []
+for case in cases:
+    source = route(case.text)
+    for name, follow_up in variants(case.text).items():
+        observed = route(follow_up)
+        if observed != source:
+            failures.append((case.text, name, source, observed))
+
+assert not failures, failures
+print(f&quot;passed {len(cases) * 2} metamorphic checks&quot;)</code></pre>
+<p>Save the file as <code>metamorphic_eval.py</code> and run <code>python3 metamorphic_eval.py</code>. The output is <code>passed 6 metamorphic checks</code>. In a real LLM evaluation, also save model and prompt versions, decoding settings, raw outputs, transformation IDs, latency, and token usage. Use repeated runs when nondeterminism is part of the product configuration.</p>
+
+<h2>Separate transformation failures from model failures</h2>
+<p>A failed relation does not immediately prove a model defect. The follow-up input may have changed meaning, the output comparator may be too strict, or the relation may not apply to that case. Classify failures into at least three groups: valid product inconsistency, invalid transformation, and ambiguous oracle. Review samples from each group and track the proportions.</p>
+<p>Prefer deterministic transformations for mechanical changes. When another model creates paraphrases or semantic edits, validate that generator independently and retain the source–follow-up pair for review. The 2026 <a href="https://arxiv.org/abs/2603.23611">LLMORPH paper</a> demonstrates automated application of multiple relations at scale, but scale increases the need for relation-specific validation rather than removing it.</p>
+<p>Report results by relation and product slice, not only as one failure rate. Language, input length, tool use, risk class, and prompt version can reveal concentrated regressions. Pair the results with uncertainty-aware comparisons from <a href="/insights/llm-evaluation-confidence-intervals-paired-tests.html">paired LLM evaluation</a>, and use <a href="/insights/ai-generated-tests-independent-oracles.html">independent test oracles</a> for generated code or assertions.</p>
+
+<h2>Make relations part of regression testing</h2>
+<p>Add a small, trusted relation suite to every prompt, model, retrieval, or policy change. Run broader generated variants on a schedule, then promote reviewed failures into stable regression cases. Define release rules for critical relations separately from aggregate quality; a slight average improvement should not excuse a broken authorization or privacy boundary.</p>
+<p>NIST’s 2026 <a href="https://www.nist.gov/artificial-intelligence/ai-research/tevv-athlon-framework-evaluating-ai-systems">TEVV-Athlon framework</a> emphasizes assessments customized to the application and its goals. That is the right standard for metamorphic testing too: the value comes from relations that encode your system’s actual contract. Exact answers are only one kind of oracle. Carefully designed relationships can make variable AI behavior testable without pretending it is deterministic.</p>
+<p class="article-meta">Primary sources checked November 20, 2026. The example is synthetic and reports no personal or production results.</p>
+<footer class="article-footer">Written by <strong>Yalçın Yakar</strong> — exploring software engineering across development, DevOps, QA and complex systems.</footer>
+      </div>
+    </article>
+  </main>
+  <footer><span>© 2026 Yalçın Yakar</span><span>İstanbul · Türkiye</span></footer>
+</body>
+</html>
