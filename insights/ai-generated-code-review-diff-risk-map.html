@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; script-src 'self' 'sha256-+IFaRATcPpqZOSRVfuL2mCG4ictIKrB+qQ1YO5NvI0c='; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'none'; frame-src 'none'; media-src 'none'; worker-src 'none'; form-action 'none'; upgrade-insecure-requests">
+  <meta name="color-scheme" content="light">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>AI-Generated Code Review: Build a Diff Risk Map Before You Merge | Yalçın Yakar</title>
+  <meta name="description" content="Review AI-generated patches with a reproducible diff risk map that flags dependency, security, migration and test changes before merge.">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="theme-color" content="#e9edf1">
+  <link rel="canonical" href="https://yalcinyakar.github.io/insights/ai-generated-code-review-diff-risk-map.html">
+  <link rel="stylesheet" href="/styles.css">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="AI-Generated Code Review: Build a Diff Risk Map Before You Merge">
+  <meta property="og:description" content="Turn an AI-generated patch into a review plan by classifying changed files, sensitive surfaces and missing evidence.">
+  <meta property="og:url" content="https://yalcinyakar.github.io/insights/ai-generated-code-review-diff-risk-map.html">
+  <meta property="og:image" content="https://yalcinyakar.github.io/assets/yalcin-yakar-it-engineer.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://yalcinyakar.github.io/assets/yalcin-yakar-it-engineer.jpg">
+  <script type="application/ld+json">{
+    "@context": "https://schema.org", "@type": "BlogPosting",
+    "headline": "AI-Generated Code Review: Build a Diff Risk Map Before You Merge",
+    "description": "Review AI-generated patches with a reproducible diff risk map that flags dependency, security, migration and test changes before merge.",
+    "datePublished": "2026-11-24", "dateModified": "2026-11-24",
+    "mainEntityOfPage": "https://yalcinyakar.github.io/insights/ai-generated-code-review-diff-risk-map.html",
+    "image": "https://yalcinyakar.github.io/assets/yalcin-yakar-it-engineer.jpg",
+    "author": {"@type": "Person", "name": "Yalçın Yakar", "url": "https://yalcinyakar.github.io/"}
+  }</script>
+</head>
+<body>
+  <a class="skip-link" href="#article">Skip to article</a>
+  <div class="noise" aria-hidden="true"></div>
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="Yalçın Yakar home"><span>YY</span><b>Yalçın Yakar</b></a>
+    <nav aria-label="Article navigation"><a href="/#projects">Work</a><a href="/#experience">Experience</a><a href="/#stack">Expertise</a><a href="/#insights">Writing</a></nav>
+    <a class="nav-cta" href="https://www.linkedin.com/in/yalcinyakar" target="_blank" rel="me noopener">Connect <span aria-hidden="true">↗</span></a>
+    <details class="mobile-nav">
+      <summary>Menu <span aria-hidden="true">+</span></summary>
+      <nav aria-label="Mobile navigation"><a href="/">Home</a><a href="/#projects">Work</a><a href="/#experience">Experience</a><a href="/#stack">Expertise</a><a href="/#insights">Writing</a><a href="/#connect">Contact</a></nav>
+    </details>
+  </header>
+  <main class="article-shell" id="article" tabindex="-1">
+    <a class="article-back" href="/#insights">← Back to insights</a>
+    <article>
+      <header class="article-header">
+        <p class="article-meta">AI-Assisted Software Development · November 24, 2026 · 7 min read</p>
+        <h1>AI-Generated Code Review: Build a Diff Risk Map Before You Merge</h1>
+        <p class="article-deck">An AI explanation can sound confident while a patch quietly changes dependencies, authorization, migrations or tests. Review the evidence in the diff first.</p>
+      </header>
+      <div class="article-body">
+<p>AI coding assistants can produce a plausible implementation and a polished summary in the same response. The summary is useful orientation, but it is not independent evidence. The patch, its execution results, and the repository’s acceptance rules are what should determine whether a change is safe to merge.</p>
+<p>A practical review begins by turning the diff into a risk map. The map does not judge correctness. It identifies which surfaces changed, which evidence is required, and where a reviewer should spend attention. This keeps review proportional: a copy change and an authentication change should not receive the same checklist.</p>
+
+<h2>Start with changed behavior, not generated prose</h2>
+<p>Read the request and acceptance criteria before the implementation. Then inspect the changed files and ask four questions: What behavior was added or removed? Which trust boundary moved? Which persistent data or external interface changed? Which automated checks demonstrate the intended result?</p>
+<p>GitHub’s <a href="https://docs.github.com/en/copilot/tutorials/review-ai-generated-code">guidance for reviewing AI-generated code</a> recommends compiling and testing first, checking alignment with repository intent, scrutinizing dependencies, and watching for deleted or skipped tests. Its <a href="https://docs.github.com/en/copilot/responsible-use/agents">responsible-use guidance for agents</a> also treats generated code and commands as material that must be reviewed and verified before merge or execution.</p>
+<p>The same discipline applies regardless of which model produced the patch. Do not ask the generator whether its own work is correct and treat the answer as validation. Use repository-controlled tests, static analysis, schema checks, dependency policy, and human review of domain decisions.</p>
+
+<h2>Classify the diff into review surfaces</h2>
+<p>Begin with filenames because they provide a cheap, deterministic routing signal. A useful first pass can classify:</p>
+<ul>
+  <li><strong>Dependencies:</strong> manifests and lockfiles require package identity, version, license, maintenance and vulnerability checks.</li>
+  <li><strong>Security boundaries:</strong> authentication, authorization, secrets, cryptography and request validation require focused threat review.</li>
+  <li><strong>Persistence:</strong> migrations and schema changes require compatibility, rollback and data-loss analysis.</li>
+  <li><strong>Delivery:</strong> workflow, container and infrastructure files can change permissions or deployment behavior.</li>
+  <li><strong>Tests:</strong> removed assertions, new skips or fixtures that mirror implementation assumptions deserve explicit review.</li>
+</ul>
+<p>NIST’s <a href="https://csrc.nist.gov/Projects/ssdf">Secure Software Development Framework</a> places code review and analysis inside the development workflow, with issues recorded and triaged rather than treated as an informal final glance. A risk map is a routing layer for those controls, not a substitute for them.</p>
+
+<h2>A runnable diff risk mapper</h2>
+<p>The following Python 3 script reads the output of <code>git diff --numstat</code>. It totals the changed lines and assigns review tags from explicit path rules. Binary changes are handled without pretending their contents were inspected.</p>
+<pre><code>import sys
+from pathlib import PurePosixPath
+
+RULES = {
+    &quot;dependencies&quot;: {&quot;package.json&quot;, &quot;package-lock.json&quot;, &quot;poetry.lock&quot;},
+    &quot;security&quot;: {&quot;auth&quot;, &quot;permission&quot;, &quot;secret&quot;, &quot;crypto&quot;},
+    &quot;persistence&quot;: {&quot;migration&quot;, &quot;schema&quot;},
+    &quot;delivery&quot;: {&quot;.github/workflows&quot;, &quot;dockerfile&quot;, &quot;terraform&quot;},
+    &quot;tests&quot;: {&quot;test&quot;, &quot;spec&quot;},
+}
+
+def classify(path):
+    normalized = str(PurePosixPath(path)).lower()
+    return [
+        tag for tag, needles in RULES.items()
+        if any(needle in normalized for needle in needles)
+    ]
+
+def parse_numstat(lines):
+    records = []
+    for line in lines:
+        added, deleted, path = line.rstrip(&quot;\n&quot;).split(&quot;\t&quot;, 2)
+        binary = added == &quot;-&quot; or deleted == &quot;-&quot;
+        records.append({
+            &quot;path&quot;: path,
+            &quot;added&quot;: 0 if binary else int(added),
+            &quot;deleted&quot;: 0 if binary else int(deleted),
+            &quot;binary&quot;: binary,
+            &quot;tags&quot;: classify(path),
+        })
+    return records
+
+sample = [
+    &quot;8\t2\tsrc/auth/session.py\n&quot;,
+    &quot;1\t1\tpackage-lock.json\n&quot;,
+    &quot;12\t0\ttests/test_session.py\n&quot;,
+]
+input_lines = list(sys.stdin)
+records = parse_numstat(input_lines or sample)
+
+for item in records:
+    tags = &quot;,&quot;.join(item[&quot;tags&quot;]) or &quot;general&quot;
+    size = &quot;binary&quot; if item[&quot;binary&quot;] else f&quot;+{item['added']}/-{item['deleted']}&quot;
+    print(f&quot;{size:10} {tags:24} {item['path']}&quot;)
+
+assert {tag for item in records for tag in item[&quot;tags&quot;]} &gt;= {
+    &quot;security&quot;, &quot;dependencies&quot;, &quot;tests&quot;
+}</code></pre>
+<p>Save it as <code>diff_risk_map.py</code>. Run the built-in example with <code>python3 diff_risk_map.py</code>, or analyze a repository with <code>git diff --numstat origin/main...HEAD | python3 diff_risk_map.py</code>. The rules are intentionally transparent. Extend them with the paths and evidence requirements that match your architecture.</p>
+
+<h2>Convert tags into required evidence</h2>
+<p>A tag should trigger a concrete review action. A dependency change needs a lockfile diff and verified package source. A migration needs forward and rollback tests against representative schema states. An authorization change needs negative tests proving forbidden actions remain forbidden. A workflow change needs permission review and a test in a non-production environment.</p>
+<p>For built artifacts, the SLSA <a href="https://slsa.dev/spec/v1.2/build-provenance">provenance specification</a> defines verifiable information about where, when and how an artifact was produced, including resolved dependencies when known. Provenance helps connect a reviewed source revision to an artifact; it does not prove the source logic is correct.</p>
+<p>Require tests that can fail for the right reason. The article on <a href="/insights/ai-generated-tests-independent-oracles.html">independent oracles for AI-generated tests</a> explains why assertions copied from the implementation provide weak evidence. For large tasks, first give the assistant a scoped <a href="/insights/context-engineering-ai-coding-assistants-repository-map.html">repository map</a> so it changes fewer unrelated surfaces. If an agent can execute tools, validate its <a href="/insights/ai-agent-tool-contracts-safe-execution.html">tool contracts before actions run</a>.</p>
+
+<h2>Keep the merge decision human-readable</h2>
+<p>The final review note should be short and auditable: intended behavior, risk tags, tests executed, unresolved findings, dependency or migration decisions, and the reviewer responsible for acceptance. Preserve command output in CI rather than pasting unverified claims from the generator.</p>
+<p>AI can accelerate implementation and review preparation. It should not collapse authorship, evidence and approval into one opaque step. Build the risk map from the diff, route each surface to the right checks, and merge only when independent evidence supports the change.</p>
+<p class="article-meta">Primary sources checked November 24, 2026. The example is synthetic and reports no personal or production results.</p>
+<footer class="article-footer">Written by <strong>Yalçın Yakar</strong> — exploring software engineering across development, DevOps, QA and complex systems.</footer>
+      </div>
+    </article>
+  </main>
+  <footer><span>© 2026 Yalçın Yakar</span><span>İstanbul · Türkiye</span></footer>
+</body>
+</html>

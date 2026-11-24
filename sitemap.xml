@@ -4,7 +4,7 @@
   xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
   <url>
     <loc>https://yalcinyakar.github.io/</loc>
-    <lastmod>2026-11-20</lastmod>
+    <lastmod>2026-11-24</lastmod>
     <image:image>
       <image:loc>https://yalcinyakar.github.io/assets/yalcin-yakar-it-engineer.jpg</image:loc>
       <image:title>Yalçın Yakar, IT Engineer</image:title>
@@ -98,5 +98,9 @@
   <url>
     <loc>https://yalcinyakar.github.io/insights/metamorphic-testing-llm-applications.html</loc>
     <lastmod>2026-11-20</lastmod>
+  </url>
+  <url>
+    <loc>https://yalcinyakar.github.io/insights/ai-generated-code-review-diff-risk-map.html</loc>
+    <lastmod>2026-11-24</lastmod>
   </url>
 </urlset>
