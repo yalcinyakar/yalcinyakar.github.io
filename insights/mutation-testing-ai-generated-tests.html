@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; script-src 'self' 'sha256-BpewbK6FHIMMzlBJ6ZzbwY11R8yR4LF7XlpyNwn8Pb0='; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'none'; frame-src 'none'; media-src 'none'; worker-src 'none'; form-action 'none'; upgrade-insecure-requests">
+  <meta name="color-scheme" content="light">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>Mutation Testing for AI-Generated Tests: Measure Fault Detection, Not Test Count | Yalçın Yakar</title>
+  <meta name="description" content="Evaluate AI-generated tests with mutation testing, surviving-fault analysis and a runnable Python example instead of relying on test count or coverage.">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="theme-color" content="#e9edf1">
+  <link rel="canonical" href="https://yalcinyakar.github.io/insights/mutation-testing-ai-generated-tests.html">
+  <link rel="stylesheet" href="/styles.css">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Mutation Testing for AI-Generated Tests: Measure Fault Detection, Not Test Count">
+  <meta property="og:description" content="Use controlled code mutations to find weak assertions and missing cases in AI-generated test suites.">
+  <meta property="og:url" content="https://yalcinyakar.github.io/insights/mutation-testing-ai-generated-tests.html">
+  <meta property="og:image" content="https://yalcinyakar.github.io/assets/yalcin-yakar-it-engineer.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://yalcinyakar.github.io/assets/yalcin-yakar-it-engineer.jpg">
+  <script type="application/ld+json">{
+    "@context": "https://schema.org", "@type": "BlogPosting",
+    "headline": "Mutation Testing for AI-Generated Tests: Measure Fault Detection, Not Test Count",
+    "description": "Evaluate AI-generated tests with mutation testing, surviving-fault analysis and a runnable Python example instead of relying on test count or coverage.",
+    "datePublished": "2026-11-27", "dateModified": "2026-11-27",
+    "mainEntityOfPage": "https://yalcinyakar.github.io/insights/mutation-testing-ai-generated-tests.html",
+    "image": "https://yalcinyakar.github.io/assets/yalcin-yakar-it-engineer.jpg",
+    "author": {"@type": "Person", "name": "Yalçın Yakar", "url": "https://yalcinyakar.github.io/"}
+  }</script>
+</head>
+<body>
+  <a class="skip-link" href="#article">Skip to article</a>
+  <div class="noise" aria-hidden="true"></div>
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="Yalçın Yakar home"><span>YY</span><b>Yalçın Yakar</b></a>
+    <nav aria-label="Article navigation"><a href="/#projects">Work</a><a href="/#experience">Experience</a><a href="/#stack">Expertise</a><a href="/#insights">Writing</a></nav>
+    <a class="nav-cta" href="https://www.linkedin.com/in/yalcinyakar" target="_blank" rel="me noopener">Connect <span aria-hidden="true">↗</span></a>
+    <details class="mobile-nav">
+      <summary>Menu <span aria-hidden="true">+</span></summary>
+      <nav aria-label="Mobile navigation"><a href="/">Home</a><a href="/#projects">Work</a><a href="/#experience">Experience</a><a href="/#stack">Expertise</a><a href="/#insights">Writing</a><a href="/#connect">Contact</a></nav>
+    </details>
+  </header>
+  <main class="article-shell" id="article" tabindex="-1">
+    <a class="article-back" href="/#insights">← Back to insights</a>
+    <article>
+      <header class="article-header">
+        <p class="article-meta">AI-Assisted QA · November 27, 2026 · 7 min read</p>
+        <h1>Mutation Testing for AI-Generated Tests: Measure Fault Detection, Not Test Count</h1>
+        <p class="article-deck">A generated test can execute every line and still prove almost nothing. Seed controlled faults and check whether the suite notices.</p>
+      </header>
+      <div class="article-body">
+<p>AI can produce unit tests quickly, but speed creates an easy measurement trap. A large test count, a green build, and high line coverage describe activity; they do not show that assertions would detect incorrect behavior. A test that calls every branch and accepts every result can score well on those visible metrics.</p>
+<p>Mutation testing asks a stronger question: if the implementation were changed in a small, fault-like way, would the test suite fail? A mutation tool creates modified program variants called mutants. A failing test “kills” a mutant. A mutant that survives identifies either a weak test, an equivalent behavior, or a mutation outside the meaningful contract.</p>
+
+<h2>Use generated tests as candidates, not evidence</h2>
+<p>First verify that a generated test compiles, runs in isolation, and passes against the unmodified implementation. Then inspect its oracle: what precise requirement does each assertion encode, and would the assertion fail if that requirement were violated?</p>
+<p>The 2026 <a href="https://arxiv.org/abs/2606.10211">TestMap paper</a> frames foundation-model-generated tests as candidates that require evidence across generation, execution, coverage, mutation results, failures and repair history. This is an important distinction. A test is both software that must be maintained and evidence used to justify confidence in other software.</p>
+<p>A separate 2026 <a href="https://arxiv.org/abs/2608.15188">study comparing AI- and human-authored Python tests</a> used historical bug reverts, AST mutations, coverage-guided mutations and qualitative review rather than trusting one metric. Its conclusions are limited to the studied Python corpora and model family, but the evaluation design is broadly useful: measure whether individual tests expose faults.</p>
+
+<h2>What mutation score actually says</h2>
+<p>The basic mutation score is killed mutants divided by all non-excluded mutants. PIT’s <a href="https://pitest.org/">official documentation</a> contrasts this with line coverage: coverage shows which code executed, while mutation testing checks whether changed behavior causes tests to fail.</p>
+<p>Do not optimize the percentage blindly. Some mutants are equivalent to the original program for the reachable domain. Others represent changes that do not matter to the product contract. Review surviving mutants, classify them, and add tests only when the survivor reveals a meaningful gap.</p>
+<p>Prefer mutation operators that resemble realistic mistakes in the target code: inverted comparisons, removed validation, altered arithmetic, changed return values, or skipped calls. A broad “mutate everything” run can create noise and waste compute.</p>
+<p>Establish a clean baseline before scoring. The original implementation must pass the selected tests; otherwise a mutant may appear “killed” by an unrelated failure. Isolate flaky tests, control time and randomness, and keep external services behind deterministic test doubles. If a generated test depends on production credentials, network availability or execution order, repair that design before using its mutation result as release evidence.</p>
+<p>Also separate compile failures from behavioral kills. A useful report shows which operator was applied, which test failed, and whether the failure came from an assertion, an exception or a timeout. That detail turns a percentage into an actionable review queue.</p>
+
+<h2>A runnable mutation experiment</h2>
+<p>The following Python 3 example evaluates two test suites against three hand-written mutants of a discount function. The weak suite covers the normal path. The stronger suite adds boundary and validation behavior.</p>
+<pre><code>def discount_price(subtotal, percent):
+    if percent &lt; 0 or percent &gt; 100:
+        raise ValueError("percent must be between 0 and 100")
+    return round(subtotal * (1 - percent / 100), 2)
+
+def mutant_adds_discount(subtotal, percent):
+    if percent &lt; 0 or percent &gt; 100:
+        raise ValueError
+    return round(subtotal * (1 + percent / 100), 2)
+
+def mutant_ignores_discount(subtotal, percent):
+    if percent &lt; 0 or percent &gt; 100:
+        raise ValueError
+    return round(subtotal, 2)
+
+def mutant_rejects_boundaries(subtotal, percent):
+    if percent &lt;= 0 or percent &gt;= 100:
+        raise ValueError
+    return round(subtotal * (1 - percent / 100), 2)
+
+MUTANTS = {
+    "adds discount": mutant_adds_discount,
+    "ignores discount": mutant_ignores_discount,
+    "rejects valid boundaries": mutant_rejects_boundaries,
+}
+
+def weak_suite(fn):
+    assert fn(100, 10) == 90
+
+def strong_suite(fn):
+    weak_suite(fn)
+    assert fn(100, 0) == 100
+    assert fn(100, 100) == 0
+    try:
+        fn(100, 101)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("invalid percentage accepted")
+
+def mutation_score(suite):
+    killed, survived = [], []
+    for name, mutant in MUTANTS.items():
+        try:
+            suite(mutant)
+        except (AssertionError, ValueError):
+            killed.append(name)
+        else:
+            survived.append(name)
+    score = len(killed) / len(MUTANTS)
+    return score, killed, survived
+
+assert discount_price(100, 10) == 90
+for suite in (weak_suite, strong_suite):
+    score, killed, survived = mutation_score(suite)
+    print(f"{suite.__name__}: {score:.0%} killed; survived={survived}")
+
+assert mutation_score(weak_suite)[0] == 2 / 3
+assert mutation_score(strong_suite)[0] == 1</code></pre>
+<p>Save it as <code>mutation_demo.py</code> and run <code>python3 mutation_demo.py</code>. The weak suite kills two of three mutants; the boundary mutant survives. After boundary assertions are added, the score reaches 100% for this intentionally small mutant set.</p>
+
+<h2>Integrate mutation testing without slowing everything</h2>
+<p>Run ordinary unit tests and static checks first. Mutation testing is more expensive because it executes tests repeatedly. Target changed modules in pull requests, then schedule broader runs separately. PIT likewise recommends frequent analysis of changed code and supports thresholds, while warning that equivalent mutants require care when setting a build gate.</p>
+<p>Store the mutation tool version, operators, target paths, exclusions and surviving-mutant report as CI artifacts. Compare a change with the baseline rather than imposing a universal score across unrelated modules. Block a merge when a new, meaningful survivor appears in critical logic; do not block it merely because a cosmetic equivalent mutant exists.</p>
+<p>Pair the result with <a href="/insights/ai-generated-tests-independent-oracles.html">independent test oracles</a>: mutation testing measures sensitivity to seeded changes, not whether the expected outcome represents the true business requirement. For variable AI behavior, <a href="/insights/metamorphic-testing-llm-applications.html">metamorphic relations</a> can provide another fault-detection layer. For the implementation itself, use the <a href="/insights/ai-generated-code-review-diff-risk-map.html">diff risk map</a> to route security, dependency and migration changes to appropriate checks.</p>
+<p>The goal is not to reward an AI system for writing more tests. It is to identify which generated tests provide independent, reproducible evidence that meaningful defects would be detected.</p>
+<p class="article-meta">Primary sources checked November 27, 2026. The example is synthetic and reports no personal or production results.</p>
+<footer class="article-footer">Written by <strong>Yalçın Yakar</strong> — exploring software engineering across development, DevOps, QA and complex systems.</footer>
+      </div>
+    </article>
+  </main>
+  <footer><span>© 2026 Yalçın Yakar</span><span>İstanbul · Türkiye</span></footer>
+</body>
+</html>
